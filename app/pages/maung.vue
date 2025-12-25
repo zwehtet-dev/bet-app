@@ -1,20 +1,5 @@
 <template>
   <div class="min-h-screen text-white">
-    <!-- Balance Display -->
-    <div class="px-4 py-3">
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center justify-between">
-        <div>
-          <p class="text-xs opacity-70">{{ t('balance') }}</p>
-          <p class="text-lg font-bold">{{ formatBalance(userBalance) }} {{ t('mmk') }}</p>
-        </div>
-        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-          <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
     <!-- Game Info -->
     <div class="px-4 py-2">
       <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">

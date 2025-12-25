@@ -244,7 +244,27 @@ const translations = {
     profileUpdateFailed: 'Failed to update profile',
     passwordChanged: 'Password changed successfully',
     passwordChangeFailed: 'Failed to change password',
-    loggedOut: 'Logged out successfully'
+    loggedOut: 'Logged out successfully',
+    
+    // History specific
+    noBetsFound: 'No bets found',
+    startBettingToSeeHistory: 'Start betting to see your history here',
+    
+    // Wallet specific - Payment Info
+    paymentInformation: 'Payment Information',
+    adminAccount: 'Admin Account',
+    accountName: 'Account Name',
+    transactionId: 'Transaction ID',
+    last6Digits: 'Last 6 Digits',
+    enterLast6DigitsOfTransactionId: 'Enter the last 6 digits of your transaction ID',
+    yourPaymentInformation: 'Your Payment Information',
+    provideYourPaymentDetails: 'Provide your payment details for',
+    yourAccountNumber: 'Your Account Number',
+    yourAccountName: 'Your Account Name',
+    enterExactNameOnAccount: 'Enter the exact name on your account',
+    
+    // Navigation
+    home: 'Home'
   },
   
   myanmar: {
@@ -479,6 +499,26 @@ const translations = {
     passwordChanged: 'စကားဝှက် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ',
     passwordChangeFailed: 'စကားဝှက် ပြောင်းလဲရာတွင် မအောင်မြင်ပါ',
     loggedOut: 'အောင်မြင်စွာ ထွက်ပြီးပါပြီ',
+    
+    // History specific
+    noBetsFound: 'လောင်းကစားများ မတွေ့ပါ',
+    startBettingToSeeHistory: 'မှတ်တမ်းများ မြင်ရန် လောင်းကစား စတင်ပါ',
+    
+    // Wallet specific - Payment Info
+    paymentInformation: 'ငွေပေးချေမှု အချက်အလက်',
+    adminAccount: 'အက်ဒမင် အကောင့်',
+    accountName: 'အကောင့် အမည်',
+    transactionId: 'ငွေလွှဲမှု နံပါတ်',
+    last6Digits: 'နောက်ဆုံး ၆ လုံး',
+    enterLast6DigitsOfTransactionId: 'သင့် ငွေလွှဲမှု နံပါတ်၏ နောက်ဆုံး ၆ လုံး ရိုက်ထည့်ပါ',
+    yourPaymentInformation: 'သင့် ငွေပေးချေမှု အချက်အလက်',
+    provideYourPaymentDetails: 'သင့် ငွေပေးချေမှု အချက်အလက်များ ပေးပါ',
+    yourAccountNumber: 'သင့် အကောင့် နံပါတ်',
+    yourAccountName: 'သင့် အကောင့် အမည်',
+    enterExactNameOnAccount: 'သင့် အကောင့်ပေါ်ရှိ အမည်အတိုင်း ရိုက်ထည့်ပါ',
+    
+    // Navigation
+    home: 'ပင်မစာမျက်နှာ',
     
     // 3D Specific
     manualInput: 'လက်ဖြင့် ရိုက်ထည့်ခြင်း',

@@ -197,7 +197,7 @@
 
     <!-- Deposit Modal -->
     <div v-if="showDepositModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 w-full max-w-md border border-white/20">
+      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 w-full max-w-md border border-white/20 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-bold">{{ t('deposit') }}</h3>
           <button @click="closeDepositModal" class="text-white/70 hover:text-white">
@@ -233,6 +233,41 @@
               </option>
             </select>
           </div>
+
+          <!-- Payment Information (shown when payment method is selected) -->
+          <div v-if="selectedDepositMethod" class="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+            <h4 class="text-sm font-bold text-blue-300 mb-2">{{ t('paymentInformation') }}</h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="opacity-70">{{ t('paymentMethod') }}:</span>
+                <span class="font-bold">{{ selectedDepositMethod.name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="opacity-70">{{ t('adminAccount') }}:</span>
+                <span class="font-bold text-yellow-400">{{ selectedDepositMethod.adminAccount }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="opacity-70">{{ t('accountName') }}:</span>
+                <span class="font-bold">{{ selectedDepositMethod.adminName }}</span>
+              </div>
+            </div>
+            <div class="mt-3 p-3 bg-white/10 rounded-lg">
+              <p class="text-xs text-yellow-300">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ selectedDepositMethod.instructions }}
+              </p>
+            </div>
+          </div>
+          
+          <!-- Transaction ID Input (shown when payment method is selected) -->
+          <div v-if="selectedDepositMethod">
+            <label class="block text-sm font-medium mb-2">{{ t('transactionId') }} ({{ t('last6Digits') }})</label>
+            <input v-model="depositForm.transactionId" type="text" maxlength="20" placeholder="123456"
+                   class="w-full bg-white/20 text-white rounded-lg px-3 py-3 placeholder-white/50 border border-white/30 focus:border-green-500 focus:outline-none">
+            <p class="text-xs text-white/70 mt-1">{{ t('enterLast6DigitsOfTransactionId') }}</p>
+          </div>
           
           <!-- Action Buttons -->
           <div class="flex gap-3 pt-4">
@@ -261,7 +296,7 @@
 
     <!-- Withdraw Modal -->
     <div v-if="showWithdrawModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 w-full max-w-md border border-white/20">
+      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 w-full max-w-md border border-white/20 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-bold">{{ t('withdraw') }}</h3>
           <button @click="closeWithdrawModal" class="text-white/70 hover:text-white">
@@ -302,6 +337,29 @@
                 {{ method.name }}
               </option>
             </select>
+          </div>
+
+          <!-- User Payment Information (shown when payment method is selected) -->
+          <div v-if="selectedWithdrawMethod" class="space-y-3">
+            <div class="bg-orange-500/20 border border-orange-500/30 rounded-lg p-3">
+              <h4 class="text-sm font-bold text-orange-300 mb-2">{{ t('yourPaymentInformation') }}</h4>
+              <p class="text-xs text-orange-200">{{ t('provideYourPaymentDetails') }} {{ selectedWithdrawMethod.name }}</p>
+            </div>
+
+            <!-- Account Number -->
+            <div>
+              <label class="block text-sm font-medium mb-2">{{ t('yourAccountNumber') }}</label>
+              <input v-model="withdrawForm.accountNumber" type="text" placeholder="09123456789"
+                     class="w-full bg-white/20 text-white rounded-lg px-3 py-3 placeholder-white/50 border border-white/30 focus:border-red-500 focus:outline-none">
+            </div>
+
+            <!-- Account Name -->
+            <div>
+              <label class="block text-sm font-medium mb-2">{{ t('yourAccountName') }}</label>
+              <input v-model="withdrawForm.accountName" type="text" placeholder="John Doe"
+                     class="w-full bg-white/20 text-white rounded-lg px-3 py-3 placeholder-white/50 border border-white/30 focus:border-red-500 focus:outline-none">
+              <p class="text-xs text-white/70 mt-1">{{ t('enterExactNameOnAccount') }}</p>
+            </div>
           </div>
           
           <!-- Action Buttons -->
@@ -345,21 +403,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
-import { useWallet } from '~/composables/useWallet'
+import { useApi } from '~/composables/useApi'
 
 const { t } = useLanguage()
 const { userBalance, isLoggedIn } = useAuth()
-const {
-  paymentMethods,
-  transactions,
-  paymentMethodsLoading,
-  transactionLoading,
-  loadPaymentMethods,
-  loadTransactionHistory,
-  processBalanceTransaction,
-  loadMoreTransactions,
-  canLoadMore
-} = useWallet()
+const api = useApi()
 
 // Modal states
 const showDepositModal = ref(false)
@@ -367,21 +415,78 @@ const showWithdrawModal = ref(false)
 const message = ref('')
 const messageType = ref('success')
 
-// Filter state
+// Loading states
+const paymentMethodsLoading = ref(false)
+const transactionLoading = ref(false)
+
+// Data
+const paymentMethods = ref([
+  { id: 1, name: 'KBZ Pay', type: 'mobile_banking', isActive: true },
+  { id: 2, name: 'Wave Money', type: 'mobile_banking', isActive: true },
+  { id: 3, name: 'CB Pay', type: 'mobile_banking', isActive: true },
+  { id: 4, name: 'AYA Pay', type: 'mobile_banking', isActive: true }
+])
+
+const transactions = ref([
+  {
+    id: 1,
+    type: 'deposit',
+    amount: 50000,
+    status: 'completed',
+    paymentMethod: 'KBZ Pay',
+    createdAt: '2024-12-20T10:00:00Z'
+  },
+  {
+    id: 2,
+    type: 'withdrawal',
+    amount: 25000,
+    status: 'pending',
+    paymentMethod: 'Wave Money',
+    createdAt: '2024-12-22T14:30:00Z'
+  }
+])
+
 const transactionFilter = ref('all')
 
 // Form states
 const depositForm = ref({
   amount: 10000,
-  paymentMethodId: ''
+  paymentMethodId: '',
+  transactionId: ''
 })
 
 const withdrawForm = ref({
   amount: 0,
-  paymentMethodId: ''
+  paymentMethodId: '',
+  accountNumber: '',
+  accountName: ''
 })
 
-// Monthly stats (computed from transactions)
+// Payment method details (admin accounts for deposits)
+const paymentMethodDetails = {
+  1: { // KBZ Pay
+    adminAccount: '09123456789',
+    adminName: 'Admin KBZ Account',
+    instructions: 'Transfer to this KBZ Pay number and provide the last 6 digits of transaction ID'
+  },
+  2: { // Wave Money
+    adminAccount: '09987654321',
+    adminName: 'Admin Wave Account',
+    instructions: 'Transfer to this Wave Money number and provide the last 6 digits of transaction ID'
+  },
+  3: { // CB Pay
+    adminAccount: '09555666777',
+    adminName: 'Admin CB Account',
+    instructions: 'Transfer to this CB Pay number and provide the last 6 digits of transaction ID'
+  },
+  4: { // AYA Pay
+    adminAccount: '09444555666',
+    adminName: 'Admin AYA Account',
+    instructions: 'Transfer to this AYA Pay number and provide the last 6 digits of transaction ID'
+  }
+}
+
+// Computed properties
 const monthlyStats = computed(() => {
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
@@ -402,15 +507,14 @@ const monthlyStats = computed(() => {
   }
 })
 
-// Active payment methods
 const activePaymentMethods = computed(() => {
   return paymentMethods.value.filter(method => method.isActive)
 })
 
-// Form validation
 const canProcessDeposit = computed(() => {
   return depositForm.value.amount >= 1000 && 
          depositForm.value.paymentMethodId && 
+         depositForm.value.transactionId.length >= 6 &&
          isLoggedIn.value
 })
 
@@ -418,12 +522,27 @@ const canProcessWithdraw = computed(() => {
   return withdrawForm.value.amount >= 1000 && 
          withdrawForm.value.amount <= userBalance.value &&
          withdrawForm.value.paymentMethodId && 
+         withdrawForm.value.accountNumber.length >= 6 &&
+         withdrawForm.value.accountName.length >= 2 &&
          isLoggedIn.value
+})
+
+// Get selected payment method details
+const selectedDepositMethod = computed(() => {
+  if (!depositForm.value.paymentMethodId) return null
+  const method = activePaymentMethods.value.find(m => m.id == depositForm.value.paymentMethodId)
+  const details = paymentMethodDetails[depositForm.value.paymentMethodId]
+  return method && details ? { ...method, ...details } : null
+})
+
+const selectedWithdrawMethod = computed(() => {
+  if (!withdrawForm.value.paymentMethodId) return null
+  return activePaymentMethods.value.find(m => m.id == withdrawForm.value.paymentMethodId)
 })
 
 // Utility functions
 const formatBalance = (balance) => {
-  return new Intl.NumberFormat('en-US').format(balance)
+  return new Intl.NumberFormat('en-US').format(balance || 0)
 }
 
 const formatDateTime = (dateString) => {
@@ -467,7 +586,8 @@ const closeDepositModal = () => {
   showDepositModal.value = false
   depositForm.value = {
     amount: 10000,
-    paymentMethodId: ''
+    paymentMethodId: '',
+    transactionId: ''
   }
 }
 
@@ -475,7 +595,9 @@ const closeWithdrawModal = () => {
   showWithdrawModal.value = false
   withdrawForm.value = {
     amount: 0,
-    paymentMethodId: ''
+    paymentMethodId: '',
+    accountNumber: '',
+    accountName: ''
   }
 }
 
@@ -483,49 +605,77 @@ const closeWithdrawModal = () => {
 const processDeposit = async () => {
   if (!canProcessDeposit.value) return
   
+  transactionLoading.value = true
+  
   try {
-    const transactionData = {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    const newTransaction = {
+      id: Date.now(),
       type: 'deposit',
       amount: depositForm.value.amount,
-      paymentMethodId: depositForm.value.paymentMethodId
+      status: 'pending',
+      paymentMethod: activePaymentMethods.value.find(m => m.id == depositForm.value.paymentMethodId)?.name,
+      createdAt: new Date().toISOString()
     }
     
-    const result = await processBalanceTransaction(transactionData)
-    
-    if (result.success) {
-      showMessage(t('depositRequestSubmitted'), 'success')
-      closeDepositModal()
-      await loadTransactionHistory()
-    } else {
-      showMessage(result.error || t('depositFailed'), 'error')
-    }
+    transactions.value.unshift(newTransaction)
+    showMessage(t('depositRequestSubmitted'), 'success')
+    closeDepositModal()
   } catch (error) {
     showMessage(t('errorProcessingDeposit'), 'error')
+  } finally {
+    transactionLoading.value = false
   }
 }
 
 const processWithdraw = async () => {
   if (!canProcessWithdraw.value) return
   
+  transactionLoading.value = true
+  
   try {
-    const transactionData = {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    const newTransaction = {
+      id: Date.now(),
       type: 'withdrawal',
       amount: withdrawForm.value.amount,
-      paymentMethodId: withdrawForm.value.paymentMethodId
+      status: 'pending',
+      paymentMethod: activePaymentMethods.value.find(m => m.id == withdrawForm.value.paymentMethodId)?.name,
+      createdAt: new Date().toISOString()
     }
     
-    const result = await processBalanceTransaction(transactionData)
-    
-    if (result.success) {
-      showMessage(t('withdrawalRequestSubmitted'), 'success')
-      closeWithdrawModal()
-      await loadTransactionHistory()
-    } else {
-      showMessage(result.error || t('withdrawalFailed'), 'error')
-    }
+    transactions.value.unshift(newTransaction)
+    showMessage(t('withdrawalRequestSubmitted'), 'success')
+    closeWithdrawModal()
   } catch (error) {
     showMessage(t('errorProcessingWithdrawal'), 'error')
+  } finally {
+    transactionLoading.value = false
   }
+}
+
+const loadPaymentMethods = async () => {
+  // Simulate loading
+  paymentMethodsLoading.value = true
+  await new Promise(resolve => setTimeout(resolve, 500))
+  paymentMethodsLoading.value = false
+}
+
+const loadMoreTransactions = () => {
+  // Simulate loading more transactions
+  const newTransaction = {
+    id: Date.now(),
+    type: Math.random() > 0.5 ? 'deposit' : 'withdrawal',
+    amount: Math.floor(Math.random() * 50000) + 10000,
+    status: Math.random() > 0.7 ? 'completed' : 'pending',
+    paymentMethod: 'KBZ Pay',
+    createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+  }
+  transactions.value.push(newTransaction)
 }
 
 const showMessage = (msg, type = 'success') => {
@@ -536,33 +686,9 @@ const showMessage = (msg, type = 'success') => {
   }, 3000)
 }
 
-// Load data on mount
-onMounted(async () => {
+onMounted(() => {
   if (isLoggedIn.value) {
-    await Promise.all([
-      loadPaymentMethods(),
-      loadTransactionHistory()
-    ])
+    loadPaymentMethods()
   }
 })
-
-// Watch for filter changes
-const handleFilterChange = async () => {
-  const filters = {}
-  
-  if (transactionFilter.value !== 'all') {
-    if (['deposit', 'withdrawal'].includes(transactionFilter.value)) {
-      filters.type = transactionFilter.value
-    } else if (['completed', 'pending', 'failed', 'cancelled'].includes(transactionFilter.value)) {
-      filters.status = transactionFilter.value
-    }
-  }
-  
-  await loadTransactionHistory(filters)
-}
-
-// Update the loadTransactionHistory call to use the filter
-const loadTransactionHistoryWithFilter = () => {
-  handleFilterChange()
-}
 </script>

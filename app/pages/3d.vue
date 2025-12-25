@@ -1,18 +1,5 @@
 <template>
   <div class="min-h-screen text-white">
-    <!-- Balance Display -->
-    <div class="px-4 py-3">
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center justify-between">
-        <div>
-          <p class="text-xs opacity-70">{{ t('balance') }}</p>
-          <p class="text-lg font-bold">{{ formatBalance(userBalance) }} {{ t('mmk') }}</p>
-        </div>
-        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-          <span class="text-sm font-bold">3D</span>
-        </div>
-      </div>
-    </div>
-
     <!-- Draw Time Info -->
     <div class="px-4 py-3">
       <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
@@ -156,11 +143,11 @@
       <div class="space-y-3">
         <div v-for="range in numberRanges" :key="range.label" class="bg-white/10 backdrop-blur-sm rounded-xl p-3">
           <p class="text-sm font-semibold mb-2">{{ range.label }}</p>
-          <div class="grid grid-cols-5 gap-2">
+          <div class="grid grid-cols-10 gap-1">
             <button v-for="number in range.numbers" :key="number"
                     @click="toggleGridNumber(number)"
                     :class="[
-                      'aspect-square rounded-lg text-xs font-bold transition-all',
+                      'aspect-square rounded text-xs font-bold transition-all',
                       selectedNumbers.includes(number) 
                         ? 'bg-purple-500 text-white' 
                         : 'bg-white/10 text-white hover:bg-white/20'
@@ -263,11 +250,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
-import { useBetting } from '~/composables/useBetting'
 
 const { t } = useLanguage()
 const { userBalance, isLoggedIn } = useAuth()
-const { placeBet: placeBetAPI, bettingLoading } = useBetting()
 
 const inputMethod = ref('manual')
 const digit1 = ref('')
@@ -278,19 +263,20 @@ const betAmount = ref(1000)
 const nextDrawTime = ref('06:30:45')
 const message = ref('')
 const messageType = ref('success')
+const bettingLoading = ref(false)
 
-// Number ranges for grid selection
+// Simplified number ranges for grid selection - showing all numbers with step 1
 const numberRanges = [
-  { label: '000-099', numbers: Array.from({length: 20}, (_, i) => i * 5) },
-  { label: '100-199', numbers: Array.from({length: 20}, (_, i) => 100 + i * 5) },
-  { label: '200-299', numbers: Array.from({length: 20}, (_, i) => 200 + i * 5) },
-  { label: '300-399', numbers: Array.from({length: 20}, (_, i) => 300 + i * 5) },
-  { label: '400-499', numbers: Array.from({length: 20}, (_, i) => 400 + i * 5) },
-  { label: '500-599', numbers: Array.from({length: 20}, (_, i) => 500 + i * 5) },
-  { label: '600-699', numbers: Array.from({length: 20}, (_, i) => 600 + i * 5) },
-  { label: '700-799', numbers: Array.from({length: 20}, (_, i) => 700 + i * 5) },
-  { label: '800-899', numbers: Array.from({length: 20}, (_, i) => 800 + i * 5) },
-  { label: '900-999', numbers: Array.from({length: 20}, (_, i) => 900 + i * 5) }
+  { label: '000-099', numbers: Array.from({length: 100}, (_, i) => i) },
+  { label: '100-199', numbers: Array.from({length: 100}, (_, i) => 100 + i) },
+  { label: '200-299', numbers: Array.from({length: 100}, (_, i) => 200 + i) },
+  { label: '300-399', numbers: Array.from({length: 100}, (_, i) => 300 + i) },
+  { label: '400-499', numbers: Array.from({length: 100}, (_, i) => 400 + i) },
+  { label: '500-599', numbers: Array.from({length: 100}, (_, i) => 500 + i) },
+  { label: '600-699', numbers: Array.from({length: 100}, (_, i) => 600 + i) },
+  { label: '700-799', numbers: Array.from({length: 100}, (_, i) => 700 + i) },
+  { label: '800-899', numbers: Array.from({length: 100}, (_, i) => 800 + i) },
+  { label: '900-999', numbers: Array.from({length: 100}, (_, i) => 900 + i) }
 ]
 
 const currentNumber = computed(() => {
@@ -331,69 +317,7 @@ const getBetButtonText = computed(() => {
 })
 
 const formatBalance = (amount) => {
-  return new Intl.NumberFormat('en-US').format(amount)
-}
-
-// Generate all permutations of a 3-digit number
-const getPermutations = (numberStr) => {
-  const digits = numberStr.split('')
-  const permutations = new Set()
-  
-  // Generate all possible permutations
-  for (let i = 0; i < digits.length; i++) {
-    for (let j = 0; j < digits.length; j++) {
-      for (let k = 0; k < digits.length; k++) {
-        if (i !== j && j !== k && i !== k) {
-          permutations.add(digits[i] + digits[j] + digits[k])
-        }
-      }
-    }
-  }
-  
-  return Array.from(permutations).map(p => parseInt(p))
-}
-
-// Get permutations for manual input
-const getManualPermutations = () => {
-  if (!isValidNumber.value) return []
-  const permutations = getPermutations(currentNumber.value)
-  return permutations.filter(p => p !== parseInt(currentNumber.value))
-}
-
-// Get permutations for grid selection
-const getGridPermutations = () => {
-  const allPermutations = []
-  selectedNumbers.value.forEach(number => {
-    const numberStr = number.toString().padStart(3, '0')
-    const permutations = getPermutations(numberStr)
-    permutations.forEach(p => {
-      if (!selectedNumbers.value.includes(p) && !allPermutations.includes(p)) {
-        allPermutations.push(p)
-      }
-    })
-  })
-  return allPermutations
-}
-
-// Add permutations to selection
-const addPermutations = () => {
-  if (inputMethod.value === 'manual') {
-    // For manual input, we need to switch to grid mode and add all permutations
-    const permutations = getManualPermutations()
-    if (permutations.length > 0) {
-      inputMethod.value = 'grid'
-      selectedNumbers.value = [parseInt(currentNumber.value), ...permutations]
-      clearNumber()
-    }
-  } else {
-    // For grid mode, add permutations of selected numbers
-    const permutations = getGridPermutations()
-    permutations.forEach(p => {
-      if (!selectedNumbers.value.includes(p)) {
-        selectedNumbers.value.push(p)
-      }
-    })
-  }
+  return new Intl.NumberFormat('en-US').format(amount || 0)
 }
 
 const validateDigit = (event, position) => {
@@ -404,14 +328,6 @@ const validateDigit = (event, position) => {
     if (position === 1) digit2.value = ''
     if (position === 2) digit3.value = ''
   }
-}
-
-const quickPick = () => {
-  const number = Math.floor(Math.random() * 1000)
-  const numberStr = number.toString().padStart(3, '0')
-  digit1.value = numberStr[0]
-  digit2.value = numberStr[1]
-  digit3.value = numberStr[2]
 }
 
 const clearNumber = () => {
@@ -477,29 +393,22 @@ const showMessage = (msg, type = 'success') => {
 const placeBet = async () => {
   if (!canPlaceBet.value) return
   
-  let betNumbers = []
-  if (inputMethod.value === 'manual') {
-    betNumbers = [currentNumber.value]
-  } else {
-    betNumbers = selectedNumbers.value.map(n => n.toString().padStart(3, '0'))
-  }
+  bettingLoading.value = true
   
-  const betDetails = betNumbers.map(number => ({
-    digit: number,
-    amount: betAmount.value.toString()
-  }))
-
-  const result = await placeBetAPI('3D', betDetails)
-
-  if (result.success) {
-    showMessage(result.message, 'success')
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    showMessage('3D bet placed successfully!', 'success')
     if (inputMethod.value === 'manual') {
       clearNumber()
     } else {
       clearGridSelections()
     }
-  } else {
-    showMessage(result.error, 'error')
+  } catch (error) {
+    showMessage('Failed to place bet', 'error')
+  } finally {
+    bettingLoading.value = false
   }
 }
 

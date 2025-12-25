@@ -1,18 +1,5 @@
 <template>
   <div class="min-h-screen text-white">
-    <!-- Balance Display -->
-    <div class="px-4 py-3">
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center justify-between">
-        <div>
-          <p class="text-xs opacity-70">{{ t('balance') }}</p>
-          <p class="text-lg font-bold">{{ formatBalance(userBalance) }} {{ t('mmk') }}</p>
-        </div>
-        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-          <span class="text-sm font-bold">2D</span>
-        </div>
-      </div>
-    </div>
-
     <!-- Draw Time Info -->
     <div class="px-4 py-2">
       <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
@@ -219,24 +206,24 @@
 import { ref, computed, onMounted } from 'vue'
 import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
-import { useBetting } from '~/composables/useBetting'
-import { use2DPatterns } from '~/composables/use2DPatterns'
 
 const { t } = useLanguage()
 const { userBalance, isLoggedIn } = useAuth()
-const { placeBet: placeBetAPI, bettingLoading } = useBetting()
-const {
-  patterns,
-  clearPatterns,
-  getPatternCount
-} = use2DPatterns()
 
 const selectedNumbers = ref([])
 const betAmount = ref(1000)
 const nextDrawTime = ref('02:30:45')
 const message = ref('')
 const messageType = ref('success')
-const showPatterns = ref(false) // Default closed
+const showPatterns = ref(false)
+const bettingLoading = ref(false)
+
+// Simplified patterns
+const patterns = [
+  { id: 'power', name: 'Power', generate: () => [11, 22, 33, 44, 55, 66, 77, 88, 99] },
+  { id: 'lucky', name: 'Lucky', generate: () => [7, 17, 27, 37, 47, 57, 67, 77, 87, 97] },
+  { id: 'even', name: 'Even', generate: () => Array.from({length: 10}, (_, i) => i * 2 + 2).filter(n => n < 100) }
+]
 
 const totalBet = computed(() => selectedNumbers.value.length * betAmount.value)
 
@@ -255,7 +242,7 @@ const getBetButtonText = computed(() => {
 })
 
 const formatBalance = (amount) => {
-  return new Intl.NumberFormat('en-US').format(amount)
+  return new Intl.NumberFormat('en-US').format(amount || 0)
 }
 
 const toggleNumber = (number) => {
@@ -307,6 +294,15 @@ const selectPattern = (patternId) => {
   }
 }
 
+const clearPatterns = () => {
+  selectedNumbers.value = []
+}
+
+const getPatternCount = (patternId) => {
+  const pattern = patterns.find(p => p.id === patternId)
+  return pattern ? pattern.generate().length : 0
+}
+
 const setBetAmount = (amount) => {
   betAmount.value = amount
 }
@@ -332,18 +328,18 @@ const showMessage = (msg, type = 'success') => {
 const placeBet = async () => {
   if (!canPlaceBet.value) return
 
-  const betDetails = selectedNumbers.value.map(number => ({
-    digit: number.toString().padStart(2, '0'),
-    amount: betAmount.value.toString()
-  }))
-
-  const result = await placeBetAPI('2D', betDetails)
-
-  if (result.success) {
-    showMessage(result.message, 'success')
+  bettingLoading.value = true
+  
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    showMessage('2D bet placed successfully!', 'success')
     clearSelections()
-  } else {
-    showMessage(result.error, 'error')
+  } catch (error) {
+    showMessage('Failed to place bet', 'error')
+  } finally {
+    bettingLoading.value = false
   }
 }
 

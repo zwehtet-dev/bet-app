@@ -50,46 +50,10 @@
       </div>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Settings -->
     <div class="px-4 py-2">
-      <h3 class="text-lg font-bold mb-3">{{ t('quickActions') }}</h3>
+      <h3 class="text-lg font-bold mb-3">{{ t('settings') }}</h3>
       <div class="space-y-2">
-        <NuxtLink to="/wallet" 
-                  class="w-full bg-white/10 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between hover:bg-white/20 transition-colors block">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div class="text-left">
-              <p class="text-sm font-semibold">{{ t('wallet') }}</p>
-              <p class="text-xs opacity-70">{{ t('manageBalance') }}</p>
-            </div>
-          </div>
-          <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </NuxtLink>
-
-        <NuxtLink to="/history" 
-                  class="w-full bg-white/10 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between hover:bg-white/20 transition-colors block">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div class="text-left">
-              <p class="text-sm font-semibold">{{ t('betHistory') }}</p>
-              <p class="text-xs opacity-70">{{ t('viewBetHistory') }}</p>
-            </div>
-          </div>
-          <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </NuxtLink>
-
         <button @click="showChangePassword = true" 
                 class="w-full bg-white/10 backdrop-blur-sm rounded-xl p-4 flex items-center justify-between hover:bg-white/20 transition-colors">
           <div class="flex items-center space-x-3">
