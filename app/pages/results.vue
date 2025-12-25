@@ -2,25 +2,29 @@
   <div class="text-white">
     <!-- Filter Tabs -->
     <section class="px-4 py-3">
-      <div class="flex gap-2">
-        <button v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value"
-                :class="['flex-1 py-2 rounded-xl text-xs font-semibold transition-colors',
-                         activeTab === tab.value ? tab.activeClass : 'bg-white/5 text-white/60 hover:bg-white/10']">
-          {{ tab.label }}
-        </button>
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-1.5 border border-white/10">
+        <div class="flex gap-1">
+          <button v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value"
+                  :class="['flex-1 py-2.5 rounded-xl text-xs font-bold transition-all',
+                           activeTab === tab.value ? tab.activeClass : 'text-white/60 hover:text-white']">
+            {{ tab.label }}
+          </button>
+        </div>
       </div>
     </section>
 
-    <!-- Latest Winner -->
+    <!-- Latest Winner Banner -->
     <section class="px-4 py-2">
-      <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-4">
-        <div class="flex items-center justify-between">
+      <div class="relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-5">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
+        <div class="relative flex items-center justify-between">
           <div>
-            <p class="text-black/70 text-xs font-medium">🎉 Latest Winner</p>
-            <p class="text-black/60 text-[10px]">2D Morning - Today 12:00 PM</p>
+            <p class="text-black/70 text-xs font-bold mb-1">🎉 Latest Winner</p>
+            <p class="text-black/60 text-[10px]">2D Morning Draw</p>
+            <p class="text-black/60 text-[10px]">Today 12:00 PM</p>
           </div>
           <div class="text-right">
-            <p class="text-black text-3xl font-bold">47</p>
+            <p class="text-black text-4xl font-black">47</p>
             <p class="text-black/60 text-[10px]">Winning Number</p>
           </div>
         </div>
@@ -28,26 +32,30 @@
     </section>
 
     <!-- Results List -->
-    <section class="px-4 py-2">
-      <h2 class="text-sm font-semibold text-white/80 mb-3">Recent Results</h2>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-bold mb-3">Recent Results</h2>
       <div class="space-y-2">
-        <div v-for="result in filteredResults" :key="result.id" class="bg-white/5 rounded-xl p-3 border border-white/5">
-          <div class="flex items-center gap-3">
-            <div :class="['w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold', result.type === '2D' ? 'bg-blue-500' : 'bg-purple-500']">
+        <div v-for="result in filteredResults" :key="result.id" 
+             class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+          <div class="flex items-center gap-4">
+            <div :class="['w-14 h-14 rounded-xl flex items-center justify-center text-sm font-black shadow-lg', 
+                          result.type === '2D' ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/30' : 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-purple-500/30']">
               {{ result.type }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium">{{ result.session }}</p>
+              <p class="text-sm font-bold">{{ result.session }}</p>
               <p class="text-[10px] text-white/50">{{ result.date }} • {{ result.time }}</p>
+              <div class="flex items-center gap-3 mt-1 text-[10px] text-white/40">
+                <span>Bets: {{ result.totalBets.toLocaleString() }}</span>
+                <span>Winners: {{ result.winners }}</span>
+              </div>
             </div>
             <div class="text-right">
-              <p :class="['text-xl font-bold', result.type === '2D' ? 'text-blue-400' : 'text-purple-400']">{{ result.number }}</p>
+              <p :class="['text-3xl font-black', result.type === '2D' ? 'text-blue-400' : 'text-purple-400']">
+                {{ result.number }}
+              </p>
               <p class="text-[10px] text-white/40">#{{ result.drawNumber }}</p>
             </div>
-          </div>
-          <div class="flex items-center justify-between text-[10px] text-white/40 mt-2 pt-2 border-t border-white/5">
-            <span>Bets: {{ result.totalBets.toLocaleString() }}</span>
-            <span>Winners: {{ result.winners }}</span>
           </div>
         </div>
       </div>
@@ -55,29 +63,30 @@
 
     <!-- Load More -->
     <section class="px-4 py-3">
-      <button @click="loadMore" class="w-full bg-white/5 hover:bg-white/10 text-white/70 py-3 rounded-xl text-sm font-medium transition-colors">
+      <button @click="loadMore" 
+              class="w-full bg-white/10 hover:bg-white/15 text-white/70 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98]">
         Load More Results
       </button>
     </section>
 
     <!-- Statistics -->
-    <section class="px-4 py-2">
-      <h2 class="text-sm font-semibold text-white/80 mb-3">Statistics</h2>
+    <section class="px-4 py-3">
+      <h2 class="text-sm font-bold mb-3">Today's Statistics</h2>
       <div class="grid grid-cols-2 gap-2">
-        <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
-          <p class="text-xl font-bold text-blue-400">{{ stats.total2D }}</p>
-          <p class="text-[10px] text-white/50">2D Draws Today</p>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <p class="text-2xl font-black text-blue-400">{{ stats.total2D }}</p>
+          <p class="text-[10px] text-white/50">2D Draws</p>
         </div>
-        <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
-          <p class="text-xl font-bold text-purple-400">{{ stats.total3D }}</p>
-          <p class="text-[10px] text-white/50">3D Draws Today</p>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <p class="text-2xl font-black text-purple-400">{{ stats.total3D }}</p>
+          <p class="text-[10px] text-white/50">3D Draws</p>
         </div>
-        <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
-          <p class="text-xl font-bold text-green-400">{{ stats.totalWinners }}</p>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <p class="text-2xl font-black text-green-400">{{ stats.totalWinners }}</p>
           <p class="text-[10px] text-white/50">Total Winners</p>
         </div>
-        <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
-          <p class="text-xl font-bold text-amber-400">{{ stats.totalPayout.toLocaleString() }}</p>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <p class="text-2xl font-black text-amber-400">{{ formatNumber(stats.totalPayout) }}</p>
           <p class="text-[10px] text-white/50">Total Payout</p>
         </div>
       </div>
@@ -85,21 +94,26 @@
 
     <!-- Hot Numbers -->
     <section class="px-4 py-3 pb-6">
-      <h2 class="text-sm font-semibold text-white/80 mb-3">Hot Numbers (This Week)</h2>
-      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
-        <div class="mb-3">
-          <p class="text-xs text-white/60 mb-2">2D Hot Numbers</p>
-          <div class="flex flex-wrap gap-1.5">
-            <span v-for="n in hotNumbers2D" :key="n.number" class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-bold">
-              {{ n.number }} <span class="text-blue-400/60">({{ n.count }}x)</span>
+      <h2 class="text-sm font-bold mb-3">🔥 Hot Numbers (This Week)</h2>
+      <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+        <!-- 2D Hot Numbers -->
+        <div class="mb-4">
+          <p class="text-xs text-white/60 mb-2 font-medium">2D Hot Numbers</p>
+          <div class="flex flex-wrap gap-2">
+            <span v-for="n in hotNumbers2D" :key="n.number" 
+                  class="bg-gradient-to-br from-blue-500/20 to-blue-600/20 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-black border border-blue-500/30">
+              {{ n.number }} <span class="text-blue-400/60 font-medium">({{ n.count }}×)</span>
             </span>
           </div>
         </div>
+        
+        <!-- 3D Hot Numbers -->
         <div>
-          <p class="text-xs text-white/60 mb-2">3D Hot Numbers</p>
-          <div class="flex flex-wrap gap-1.5">
-            <span v-for="n in hotNumbers3D" :key="n.number" class="bg-purple-500/20 text-purple-400 px-2 py-1 rounded text-xs font-bold">
-              {{ n.number }} <span class="text-purple-400/60">({{ n.count }}x)</span>
+          <p class="text-xs text-white/60 mb-2 font-medium">3D Hot Numbers</p>
+          <div class="flex flex-wrap gap-2">
+            <span v-for="n in hotNumbers3D" :key="n.number" 
+                  class="bg-gradient-to-br from-purple-500/20 to-purple-600/20 text-purple-400 px-3 py-1.5 rounded-lg text-xs font-black border border-purple-500/30">
+              {{ n.number }} <span class="text-purple-400/60 font-medium">({{ n.count }}×)</span>
             </span>
           </div>
         </div>
@@ -114,9 +128,9 @@ import { ref, computed } from 'vue'
 const activeTab = ref('all')
 
 const tabs = [
-  { value: 'all', label: 'All', activeClass: 'bg-blue-500 text-white' },
-  { value: '2d', label: '2D Only', activeClass: 'bg-blue-500 text-white' },
-  { value: '3d', label: '3D Only', activeClass: 'bg-purple-500 text-white' }
+  { value: 'all', label: 'All', activeClass: 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg' },
+  { value: '2d', label: '2D Only', activeClass: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' },
+  { value: '3d', label: '3D Only', activeClass: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' }
 ]
 
 const results = ref([
@@ -135,6 +149,12 @@ const filteredResults = computed(() => {
   if (activeTab.value === 'all') return results.value
   return results.value.filter(r => r.type === activeTab.value.toUpperCase())
 })
+
+const formatNumber = (n) => {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+  if (n >= 1000) return (n / 1000).toFixed(0) + 'K'
+  return n.toLocaleString()
+}
 
 const loadMore = () => {
   results.value.push({

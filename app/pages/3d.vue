@@ -1,151 +1,139 @@
 <template>
   <div class="text-white">
-    <!-- Draw Timer -->
-    <section class="px-4 py-3">
-      <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-3 border border-purple-500/20">
+    <!-- Timer -->
+    <div class="px-4 py-3">
+      <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-500/20">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs text-white/60">{{ t('nextDraw') }}</p>
-            <p class="text-sm font-medium">{{ t('eveningSession') }} • 6:30 PM</p>
+            <p class="text-[10px] text-white/50">{{ t('nextDraw') }}</p>
+            <p class="text-sm font-bold">{{ t('eveningSession') }}</p>
+            <p class="text-[10px] text-white/40">6:30 PM</p>
           </div>
-          <div class="bg-purple-500/20 px-3 py-1.5 rounded-lg">
-            <p class="text-lg font-bold text-purple-400 font-mono">{{ nextDrawTime }}</p>
+          <div class="bg-purple-500/20 px-4 py-2 rounded-xl">
+            <p class="text-2xl font-black text-purple-400 font-mono">{{ timer }}</p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Input Method Toggle -->
-    <section class="px-4 py-2">
-      <div class="flex gap-2">
-        <button @click="inputMethod = 'manual'" 
-                :class="['flex-1 py-2 rounded-xl text-xs font-semibold transition-colors',
-                         inputMethod === 'manual' ? 'bg-purple-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10']">
+    <!-- Mode Toggle -->
+    <div class="px-4 py-2">
+      <div class="bg-white/5 rounded-xl p-1 flex gap-1 border border-white/5">
+        <button @click="mode = 'manual'" :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-all', mode === 'manual' ? 'bg-purple-500 shadow-lg' : 'text-white/50']">
           {{ t('manualInput') }}
         </button>
-        <button @click="inputMethod = 'grid'" 
-                :class="['flex-1 py-2 rounded-xl text-xs font-semibold transition-colors',
-                         inputMethod === 'grid' ? 'bg-purple-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10']">
+        <button @click="mode = 'grid'" :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-all', mode === 'grid' ? 'bg-purple-500 shadow-lg' : 'text-white/50']">
           {{ t('numberGrid') }}
         </button>
       </div>
-    </section>
+    </div>
 
     <!-- Manual Input -->
-    <section v-if="inputMethod === 'manual'" class="px-4 py-3">
-      <div class="bg-white/5 rounded-xl p-4 border border-white/5">
-        <div class="flex items-center justify-center gap-2 mb-4">
-          <input v-for="(_, i) in 3" :key="i" v-model="digits[i]" @input="validateDigit($event, i)" maxlength="1"
-                 class="w-14 h-14 bg-white/10 text-white text-2xl font-bold text-center rounded-xl border-2 border-transparent focus:border-purple-400 focus:outline-none">
+    <div v-if="mode === 'manual'" class="px-4 py-3">
+      <div class="bg-white/5 rounded-xl p-5 border border-white/5">
+        <div class="flex justify-center gap-3 mb-4">
+          <input v-for="i in 3" :key="i" v-model="digits[i-1]" @input="onDigit($event, i-1)" maxlength="1"
+                 class="w-14 h-14 bg-white/10 rounded-xl text-2xl font-black text-center border-2 border-white/20 focus:border-purple-400 focus:outline-none">
         </div>
         <div class="text-center">
-          <p class="text-xs text-white/50 mb-1">{{ t('your3DNumber') }}</p>
-          <p class="text-3xl font-bold text-purple-400">{{ currentNumber }}</p>
+          <p class="text-xs text-white/40 mb-1">{{ t('your3DNumber') }}</p>
+          <p class="text-4xl font-black text-purple-400">{{ currentNum }}</p>
         </div>
-        
-        <!-- Permutations -->
-        <div v-if="isValidNumber && permutations.length > 0" class="mt-3 pt-3 border-t border-white/5">
+        <div v-if="isValid && perms.length" class="mt-4 pt-4 border-t border-white/10">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] text-white/40">{{ t('permutationHint') }}:</span>
-            <button @click="addPermutations" class="text-[10px] bg-orange-500 hover:bg-orange-600 text-white px-2 py-0.5 rounded transition-colors">
-              +{{ permutations.length }} {{ t('addPermutations') }}
-            </button>
+            <span class="text-[10px] text-white/40">Permutations:</span>
+            <button @click="addPerms" class="text-[10px] bg-orange-500 px-2.5 py-1 rounded-lg font-bold active:scale-95">+{{ perms.length }}</button>
           </div>
           <div class="flex flex-wrap gap-1">
-            <span v-for="p in permutations.slice(0, 6)" :key="p" class="text-[10px] bg-orange-500/20 text-orange-300 px-1.5 py-0.5 rounded">
-              {{ p.toString().padStart(3, '0') }}
-            </span>
+            <span v-for="p in perms.slice(0, 5)" :key="p" class="text-[10px] bg-orange-500/20 text-orange-300 px-1.5 py-0.5 rounded">{{ p.toString().padStart(3, '0') }}</span>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- Grid Input -->
-    <section v-if="inputMethod === 'grid'" class="px-4 py-2">
-      <!-- Selected Numbers -->
-      <div class="bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-xs text-white/60">{{ t('selectedNumbers') }} ({{ selectedNumbers.length }})</p>
-          <button v-if="selectedNumbers.length > 0" @click="selectedNumbers = []" class="text-xs text-red-400">{{ t('clearAll') }}</button>
+    <div v-if="mode === 'grid'" class="px-4 py-2">
+      <div class="bg-white/5 rounded-xl p-4 border border-white/5 mb-3">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs text-white/50">{{ t('selectedNumbers') }} <span class="text-purple-400">({{ selected.length }})</span></p>
+          <button v-if="selected.length" @click="selected = []" class="text-[10px] text-red-400 font-medium">{{ t('clearAll') }}</button>
         </div>
         <div class="flex flex-wrap gap-1.5 min-h-[32px]">
-          <span v-for="num in selectedNumbers" :key="num" class="bg-purple-500 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
-            {{ num.toString().padStart(3, '0') }}
-            <button @click="selectedNumbers = selectedNumbers.filter(n => n !== num)" class="text-white/70 hover:text-white">×</button>
+          <span v-for="n in selected" :key="n" class="bg-purple-500 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
+            {{ n.toString().padStart(3, '0') }}
+            <button @click="selected = selected.filter(x => x !== n)" class="text-white/60 hover:text-white">×</button>
           </span>
-          <span v-if="selectedNumbers.length === 0" class="text-xs text-white/30">{{ t('noNumbersSelected') }}</span>
+          <span v-if="!selected.length" class="text-xs text-white/30">Tap numbers below</span>
         </div>
       </div>
-
+      
       <!-- Quick Pick -->
       <div class="flex gap-2 mb-3">
-        <button v-for="c in [1, 3, 5]" :key="c" @click="quickPick(c)"
-                class="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 py-2 rounded-lg text-xs font-medium transition-colors">
-          {{ t('lucky') }} {{ c }}
+        <button v-for="c in [1, 3, 5]" :key="c" @click="quickPick(c)" class="flex-1 bg-green-500/20 text-green-400 py-2.5 rounded-xl text-xs font-bold border border-green-500/30 active:scale-95">
+          🎲 Lucky {{ c }}
         </button>
       </div>
-
-      <!-- Number Ranges -->
-      <div class="space-y-2 max-h-[300px] overflow-y-auto">
-        <div v-for="range in numberRanges" :key="range.label" class="bg-white/5 rounded-xl p-2 border border-white/5">
-          <p class="text-[10px] text-white/50 mb-1.5">{{ range.label }}</p>
+      
+      <!-- Ranges -->
+      <div class="space-y-2 max-h-[250px] overflow-y-auto">
+        <div v-for="r in ranges" :key="r.label" class="bg-white/5 rounded-xl p-2.5 border border-white/5">
+          <p class="text-[10px] text-white/40 mb-1.5">{{ r.label }}</p>
           <div class="grid grid-cols-10 gap-0.5">
-            <button v-for="n in range.numbers" :key="n" @click="toggleGridNumber(n)"
-                    :class="['aspect-square rounded text-[9px] font-bold transition-all',
-                             selectedNumbers.includes(n) ? 'bg-purple-500 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10']">
+            <button v-for="n in r.nums" :key="n" @click="toggleGrid(n)"
+                    :class="['aspect-square rounded text-[8px] font-bold transition-all active:scale-90', selected.includes(n) ? 'bg-purple-500' : 'bg-white/5 text-white/40 hover:bg-white/10']">
               {{ n.toString().padStart(3, '0') }}
             </button>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Bet Amount -->
-    <section class="px-4 py-3">
-      <div class="bg-white/5 rounded-xl p-3 border border-white/5">
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-xs text-white/60">{{ t('amountPerNumber') }}</p>
-          <p class="text-sm font-bold text-amber-400">{{ formatBalance(betAmount) }} {{ t('mmk') }}</p>
+    <!-- Amount -->
+    <div class="px-4 py-3">
+      <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs text-white/50">{{ t('amountPerNumber') }}</p>
+          <p class="text-sm font-black text-amber-400">{{ formatBalance(amount) }} {{ t('mmk') }}</p>
         </div>
-        <div class="flex gap-2 mb-2">
-          <button v-for="amt in [500, 1000, 2000, 5000]" :key="amt" @click="betAmount = amt"
-                  :class="['flex-1 py-2 rounded-lg text-xs font-medium transition-colors',
-                           betAmount === amt ? 'bg-amber-500 text-black' : 'bg-white/5 text-white/70 hover:bg-white/10']">
-            {{ formatBalance(amt) }}
+        <div class="flex gap-2 mb-3">
+          <button v-for="a in [500, 1000, 2000, 5000]" :key="a" @click="amount = a" 
+                  :class="['flex-1 py-2 rounded-lg text-xs font-bold transition-all active:scale-95', amount === a ? 'bg-amber-500 text-black' : 'bg-white/5 text-white/60']">
+            {{ formatBalance(a) }}
           </button>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="betAmount = Math.max(500, betAmount - 100)" class="w-10 h-10 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg flex items-center justify-center">−</button>
-          <input v-model.number="betAmount" type="number" min="500" class="flex-1 bg-white/5 text-white rounded-lg px-3 py-2 text-center text-sm font-bold border border-white/10">
-          <button @click="betAmount += 100" class="w-10 h-10 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg flex items-center justify-center">+</button>
+          <button @click="amount = Math.max(500, amount - 100)" class="w-11 h-11 bg-red-500/20 text-red-400 rounded-xl text-lg font-bold active:scale-95">−</button>
+          <input v-model.number="amount" type="number" min="500" class="flex-1 bg-white/5 rounded-xl px-3 py-2.5 text-center text-sm font-bold border border-white/10 focus:border-purple-500 focus:outline-none">
+          <button @click="amount += 100" class="w-11 h-11 bg-green-500/20 text-green-400 rounded-xl text-lg font-bold active:scale-95">+</button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Summary & Place Bet -->
-    <section class="px-4 py-2 pb-6">
-      <div class="bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="flex justify-between"><span class="text-white/50">{{ t('numbersSelected') }}:</span><span class="font-bold">{{ numberCount }}</span></div>
-          <div class="flex justify-between"><span class="text-white/50">{{ t('totalBet') }}:</span><span class="font-bold text-amber-400">{{ formatBalance(totalBet) }}</span></div>
-          <div class="flex justify-between col-span-2"><span class="text-white/50">{{ t('potentialWin') }}:</span><span class="font-bold text-green-400">{{ formatBalance(totalBet * 500) }} {{ t('mmk') }}</span></div>
+    <!-- Summary -->
+    <div class="px-4 py-2 pb-6">
+      <div class="bg-white/5 rounded-xl p-4 border border-white/5 mb-4">
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-white/50">{{ t('totalBet') }}:</span>
+          <span class="font-black text-amber-400">{{ formatBalance(total) }} {{ t('mmk') }}</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-white/50">{{ t('potentialWin') }}:</span>
+          <span class="font-black text-green-400">{{ formatBalance(total * 500) }} {{ t('mmk') }}</span>
         </div>
       </div>
-      
-      <button @click="placeBet" :disabled="!canPlaceBet || loading"
-              :class="['w-full py-4 rounded-xl text-sm font-bold transition-all',
-                       canPlaceBet && !loading ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600' : 'bg-white/10 text-white/30 cursor-not-allowed']">
-        {{ loading ? 'Placing...' : getBetButtonText }}
+      <button @click="placeBet" :disabled="!canBet || loading" 
+              :class="['w-full py-4 rounded-xl text-sm font-bold transition-all active:scale-[0.98]', canBet && !loading ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25' : 'bg-white/10 text-white/30']">
+        {{ loading ? 'Placing...' : betText }}
       </button>
-    </section>
+    </div>
 
     <!-- Toast -->
     <Teleport to="body">
-      <div v-if="toast.show" class="fixed top-4 left-4 right-4 z-50 max-w-[400px] mx-auto">
-        <div :class="['p-4 rounded-xl text-center font-medium text-sm', toast.type === 'success' ? 'bg-green-500' : 'bg-red-500']">
-          {{ toast.message }}
+      <Transition name="slide">
+        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-[400px] mx-auto">
+          <div :class="['p-4 rounded-xl text-center font-medium text-sm shadow-xl', toast.type === 'success' ? 'bg-green-500' : 'bg-red-500']">{{ toast.msg }}</div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </div>
 </template>
@@ -158,106 +146,70 @@ import { useAuth } from '~/composables/useAuth'
 const { t } = useLanguage()
 const { userBalance, isLoggedIn } = useAuth()
 
-const inputMethod = ref('manual')
+const mode = ref('manual')
 const digits = ref(['', '', ''])
-const selectedNumbers = ref([])
-const betAmount = ref(1000)
-const nextDrawTime = ref('06:30:45')
+const selected = ref([])
+const amount = ref(1000)
+const timer = ref('06:30:45')
 const loading = ref(false)
-const toast = ref({ show: false, message: '', type: 'success' })
+const toast = ref(null)
 
-const numberRanges = [
-  { label: '000-099', numbers: Array.from({length: 100}, (_, i) => i) },
-  { label: '100-199', numbers: Array.from({length: 100}, (_, i) => 100 + i) },
-  { label: '200-299', numbers: Array.from({length: 100}, (_, i) => 200 + i) },
-  { label: '300-399', numbers: Array.from({length: 100}, (_, i) => 300 + i) },
-  { label: '400-499', numbers: Array.from({length: 100}, (_, i) => 400 + i) },
-  { label: '500-599', numbers: Array.from({length: 100}, (_, i) => 500 + i) },
-  { label: '600-699', numbers: Array.from({length: 100}, (_, i) => 600 + i) },
-  { label: '700-799', numbers: Array.from({length: 100}, (_, i) => 700 + i) },
-  { label: '800-899', numbers: Array.from({length: 100}, (_, i) => 800 + i) },
-  { label: '900-999', numbers: Array.from({length: 100}, (_, i) => 900 + i) }
-]
+const ranges = Array.from({ length: 10 }, (_, i) => ({ label: `${i}00-${i}99`, nums: Array.from({ length: 100 }, (_, j) => i * 100 + j) }))
 
-const currentNumber = computed(() => digits.value.map(d => d || '0').join(''))
-const isValidNumber = computed(() => digits.value.every(d => d !== ''))
-const numberCount = computed(() => inputMethod.value === 'manual' ? (isValidNumber.value ? 1 : 0) : selectedNumbers.value.length)
-const totalBet = computed(() => numberCount.value * betAmount.value)
-const canPlaceBet = computed(() => numberCount.value > 0 && totalBet.value <= userBalance.value && isLoggedIn.value)
-
-const getBetButtonText = computed(() => {
+const currentNum = computed(() => digits.value.map(d => d || '0').join(''))
+const isValid = computed(() => digits.value.every(d => d !== ''))
+const count = computed(() => mode.value === 'manual' ? (isValid.value ? 1 : 0) : selected.value.length)
+const total = computed(() => count.value * amount.value)
+const canBet = computed(() => count.value > 0 && total.value <= userBalance.value && isLoggedIn.value)
+const betText = computed(() => {
   if (!isLoggedIn.value) return 'Please Login'
-  if (numberCount.value === 0) return inputMethod.value === 'manual' ? t('enter3Digits') : t('selectNumbers')
-  if (totalBet.value > userBalance.value) return t('insufficientBalance')
-  return `${t('placeBet')} - ${formatBalance(totalBet.value)} ${t('mmk')}`
+  if (!count.value) return mode.value === 'manual' ? t('enter3Digits') : t('selectNumbers')
+  if (total.value > userBalance.value) return t('insufficientBalance')
+  return `${t('placeBet')} - ${formatBalance(total.value)} ${t('mmk')}`
 })
 
-const permutations = computed(() => {
-  if (!isValidNumber.value) return []
-  const num = parseInt(currentNumber.value)
-  const d = digits.value.map(Number)
-  const perms = new Set()
+const perms = computed(() => {
+  if (!isValid.value) return []
+  const d = digits.value.map(Number), set = new Set()
   const permute = (arr, l = 0) => {
-    if (l === arr.length - 1) { perms.add(parseInt(arr.join(''))); return }
-    for (let i = l; i < arr.length; i++) {
-      [arr[l], arr[i]] = [arr[i], arr[l]]
-      permute([...arr], l + 1)
-    }
+    if (l === arr.length - 1) { set.add(parseInt(arr.join(''))); return }
+    for (let i = l; i < arr.length; i++) { [arr[l], arr[i]] = [arr[i], arr[l]]; permute([...arr], l + 1) }
   }
   permute(d)
-  perms.delete(num)
-  return Array.from(perms).filter(p => !selectedNumbers.value.includes(p))
+  set.delete(parseInt(currentNum.value))
+  return Array.from(set).filter(p => !selected.value.includes(p))
 })
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
-
-const validateDigit = (e, i) => {
-  const v = e.target.value
-  if (!/^[0-9]$/.test(v) && v !== '') { e.target.value = ''; digits.value[i] = '' }
-}
-
-const toggleGridNumber = (n) => {
-  const idx = selectedNumbers.value.indexOf(n)
-  idx > -1 ? selectedNumbers.value.splice(idx, 1) : selectedNumbers.value.push(n)
-}
-
-const quickPick = (count) => {
-  selectedNumbers.value = []
-  while (selectedNumbers.value.length < count) {
-    const n = Math.floor(Math.random() * 1000)
-    if (!selectedNumbers.value.includes(n)) selectedNumbers.value.push(n)
-  }
-}
-
-const addPermutations = () => {
-  permutations.value.forEach(p => { if (!selectedNumbers.value.includes(p)) selectedNumbers.value.push(p) })
-  inputMethod.value = 'grid'
-}
-
-const showToast = (message, type = 'success') => {
-  toast.value = { show: true, message, type }
-  setTimeout(() => toast.value.show = false, 3000)
-}
+const onDigit = (e, i) => { if (!/^[0-9]$/.test(e.target.value) && e.target.value !== '') { e.target.value = ''; digits.value[i] = '' } }
+const toggleGrid = (n) => { const i = selected.value.indexOf(n); i > -1 ? selected.value.splice(i, 1) : selected.value.push(n) }
+const quickPick = (c) => { selected.value = []; while (selected.value.length < c) { const n = Math.floor(Math.random() * 1000); if (!selected.value.includes(n)) selected.value.push(n) } }
+const addPerms = () => { perms.value.forEach(p => { if (!selected.value.includes(p)) selected.value.push(p) }); mode.value = 'grid' }
+const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
 const placeBet = async () => {
-  if (!canPlaceBet.value) return
+  if (!canBet.value) return
   loading.value = true
   await new Promise(r => setTimeout(r, 1000))
-  showToast('3D bet placed successfully!', 'success')
+  showToast('3D bet placed!', 'success')
   digits.value = ['', '', '']
-  selectedNumbers.value = []
+  selected.value = []
   loading.value = false
 }
 
-let timer
+let timerInterval
 onMounted(() => {
-  timer = setInterval(() => {
-    const [h, m, s] = nextDrawTime.value.split(':').map(Number)
-    let total = h * 3600 + m * 60 + s - 1
-    if (total < 0) total = 18.5 * 3600 - 1
-    const nh = Math.floor(total / 3600), nm = Math.floor((total % 3600) / 60), ns = total % 60
-    nextDrawTime.value = `${nh.toString().padStart(2, '0')}:${nm.toString().padStart(2, '0')}:${ns.toString().padStart(2, '0')}`
+  timerInterval = setInterval(() => {
+    const [h, m, s] = timer.value.split(':').map(Number)
+    let t = h * 3600 + m * 60 + s - 1
+    if (t < 0) t = 18.5 * 3600 - 1
+    timer.value = `${Math.floor(t/3600).toString().padStart(2,'0')}:${Math.floor((t%3600)/60).toString().padStart(2,'0')}:${(t%60).toString().padStart(2,'0')}`
   }, 1000)
 })
-onUnmounted(() => clearInterval(timer))
+onUnmounted(() => clearInterval(timerInterval))
 </script>
+
+<style>
+.slide-enter-active, .slide-leave-active { transition: all 0.3s; }
+.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-20px); }
+</style>
