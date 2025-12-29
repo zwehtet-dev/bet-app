@@ -45,8 +45,8 @@
         </div>
       </div>
       <div class="flex gap-2 mb-3"><button v-for="c in [1, 3, 5]" :key="c" @click="quickPick(c)" class="flex-1 bg-green-500/20 text-green-400 py-2.5 rounded-xl text-xs font-bold border border-green-500/30 active:scale-95">🎲 Lucky {{ c }}</button></div>
-      <div class="space-y-2 max-h-[250px] overflow-y-auto">
-        <div v-for="r in ranges" :key="r.label" class="bg-white/5 rounded-xl p-2.5 border border-white/5"><p class="text-[10px] text-white/40 mb-1.5">{{ r.label }}</p><div class="grid grid-cols-10 gap-0.5"><button v-for="n in r.nums" :key="n" @click="toggleGrid(n)" :class="['aspect-square rounded text-[8px] font-bold transition-all active:scale-90', selected.includes(n) ? 'bg-purple-500' : 'bg-white/5 text-white/40 hover:bg-white/10']">{{ n.toString().padStart(3, '0') }}</button></div></div>
+      <div class="space-y-2 max-h-[250px] overflow-y-auto" style="contain: content; -webkit-overflow-scrolling: touch;">
+        <div v-for="r in ranges" :key="r.label" class="bg-white/5 rounded-xl p-2.5 border border-white/5"><p class="text-[10px] text-white/40 mb-1.5">{{ r.label }}</p><div class="grid grid-cols-10 gap-0.5"><button v-for="n in r.nums" :key="n" @click="toggleGrid(n)" :class="['aspect-square rounded text-[8px] font-bold transition-colors active:scale-90 touch-manipulation', selected.includes(n) ? 'bg-purple-500' : 'bg-white/5 text-white/40']">{{ n.toString().padStart(3, '0') }}</button></div></div>
       </div>
     </div>
 
@@ -84,6 +84,11 @@ import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
 import { useBetting } from '~/composables/useBetting'
 
+// Lazy load - define page meta
+definePageMeta({
+  keepalive: true
+})
+
 const { t } = useLanguage()
 const { userBalance, isLoggedIn, refreshProfile } = useAuth()
 const { placeBet, loadGameSettings, gameSettings } = useBetting()
@@ -109,7 +114,7 @@ const count = computed(() => mode.value === 'manual' ? (isValid.value ? 1 : 0) :
 const total = computed(() => count.value * amount.value)
 const canBet = computed(() => count.value > 0 && total.value <= userBalance.value && isLoggedIn.value)
 const betText = computed(() => {
-  if (!isLoggedIn.value) return 'Please Login'
+  if (!isLoggedIn.value) return 'Login Required'
   if (!count.value) return mode.value === 'manual' ? t('enter3Digits') : t('selectNumbers')
   if (total.value > userBalance.value) return t('insufficientBalance')
   return `${t('placeBet')} - ${formatBalance(total.value)} ${t('mmk')}`
@@ -210,6 +215,11 @@ const addPerms = () => {
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
 const placeBetHandler = async () => {
+  if (!isLoggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  
   if (!canBet.value) return
   loading.value = true
   
@@ -262,4 +272,5 @@ onUnmounted(() => clearInterval(timerInterval))
 <style>
 .slide-enter-active, .slide-leave-active { transition: all 0.3s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-20px); }
+.touch-manipulation { touch-action: manipulation; }
 </style>

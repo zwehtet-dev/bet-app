@@ -1,105 +1,206 @@
 <template>
   <div class="text-white">
-    <div class="px-4 py-3">
-      <div class="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl p-4 border border-orange-500/20">
-        <div class="flex items-center justify-between">
-          <div><p class="text-[10px] text-white/50">Maung Betting</p><p class="text-sm font-bold">🏆 Parlay</p><p class="text-[10px] text-white/40">Min 3, Max 10 selections</p></div>
-          <div class="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center"><span class="text-2xl">🏆</span></div>
+    <!-- Loading Skeleton -->
+    <div v-if="loading && !matches.length" class="px-4 py-4 space-y-3">
+      <div v-for="i in 5" :key="i" class="bg-white/5 rounded-xl p-4 border border-white/5 animate-pulse">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-4 w-20 bg-white/10 rounded"></div>
+          <div class="h-3 w-16 bg-white/10 rounded"></div>
+        </div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex-1 text-center"><div class="h-4 w-24 bg-white/10 rounded mx-auto"></div></div>
+          <div class="px-4"><div class="h-3 w-6 bg-white/10 rounded"></div></div>
+          <div class="flex-1 text-center"><div class="h-4 w-24 bg-white/10 rounded mx-auto"></div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="h-10 bg-white/10 rounded-lg"></div>
+          <div class="h-10 bg-white/10 rounded-lg"></div>
         </div>
       </div>
     </div>
 
-    <div v-if="loading" class="px-4 py-8 text-center"><p class="text-sm text-white/40">Loading matches...</p></div>
-
-    <div v-else-if="!matches.length" class="px-4 py-8 text-center">
+    <!-- Empty State -->
+    <div v-else-if="!loading && !matches.length" class="px-4 py-8 text-center">
       <div class="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">🏆</span></div>
       <p class="text-sm text-white/40">No matches available</p>
+      <button @click="refreshMatches" class="mt-4 px-4 py-2 bg-white/10 rounded-xl text-xs font-medium touch-manipulation active:scale-95">
+        Refresh
+      </button>
     </div>
 
+    <!-- Matches List with Infinite Scroll -->
     <div v-else class="px-4 py-2 space-y-3">
       <div v-for="match in matches" :key="match.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">{{ match.league }}</span>
-          <span class="text-[10px] text-white/40">{{ formatMatchDate(match.startDate) }}</span>
+          <span class="text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">
+            {{ match.leagueGroupName || match.league }}
+          </span>
+          <span class="text-[10px] text-white/40">{{ formatMatchDate(match.startDateInMilliSeconds) }}</span>
         </div>
         
         <div class="flex items-center justify-between mb-4">
           <div class="flex-1 text-center">
-            <p class="text-sm font-bold">{{ match.homeTeam }}</p>
-            <p v-if="match.homeBet" class="text-[10px] text-amber-400">{{ match.homeBet > 0 ? '+' : '' }}{{ match.homeBet }}</p>
+            <p class="text-sm font-bold">{{ match.homeTeam?.nameInMM || match.homeTeam?.nameInEng || 'Home Team' }}</p>
+            <p v-if="match.homeBet" class="text-[10px] text-amber-400">{{ match.homeBet }}</p>
           </div>
           <div class="px-4"><span class="text-xs text-white/40">VS</span></div>
           <div class="flex-1 text-center">
-            <p class="text-sm font-bold">{{ match.awayTeam }}</p>
-            <p v-if="match.awayBet" class="text-[10px] text-amber-400">{{ match.awayBet > 0 ? '+' : '' }}{{ match.awayBet }}</p>
+            <p class="text-sm font-bold">{{ match.awayTeam?.nameInMM || match.awayTeam?.nameInEng || 'Away Team' }}</p>
+            <p v-if="match.awayBet" class="text-[10px] text-amber-400">{{ match.awayBet }}</p>
           </div>
         </div>
 
-        <div v-if="match.gp" class="text-center mb-3"><span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span></div>
+        <div v-if="match.gp" class="text-center mb-3">
+          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span>
+        </div>
+
+        <div class="flex items-center justify-center mb-3">
+          <span :class="['text-xs px-2 py-1 rounded', getStatusColor(match.status)]">
+            {{ getStatusText(match.status) }}
+          </span>
+        </div>
 
         <div class="grid grid-cols-2 gap-2">
-          <button @click="toggleSelection(match, 'home')" :class="['py-2.5 rounded-lg text-xs font-bold transition-all', isSelected(match.id, 'home') ? 'bg-orange-500' : 'bg-white/10 hover:bg-white/20']">Home</button>
-          <button @click="toggleSelection(match, 'away')" :class="['py-2.5 rounded-lg text-xs font-bold transition-all', isSelected(match.id, 'away') ? 'bg-orange-500' : 'bg-white/10 hover:bg-white/20']">Away</button>
+          <button 
+            @click="toggleSelection(match, 'home')" 
+            :disabled="!match.betOpen"
+            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation', 
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
+              isSelected(match.id, 'home') ? 'bg-orange-500' : 'bg-white/10']">
+            Home
+          </button>
+          <button 
+            @click="toggleSelection(match, 'away')" 
+            :disabled="!match.betOpen"
+            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
+              isSelected(match.id, 'away') ? 'bg-orange-500' : 'bg-white/10']">
+            Away
+          </button>
         </div>
       </div>
+
+      <!-- Loading More Indicator -->
+      <div v-if="loadingMore" class="py-4 flex justify-center">
+        <div class="w-6 h-6 border-2 border-white/20 border-t-orange-500 rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Infinite Scroll Trigger -->
+      <div ref="infiniteScrollTrigger" class="h-4"></div>
     </div>
 
+    <!-- Selected Bets Panel -->
     <div v-if="selectedBets.length" class="px-4 py-4">
       <div class="bg-white/5 rounded-xl p-4 border border-white/5 mb-4">
         <div class="flex items-center justify-between mb-3">
           <span class="text-xs text-white/50">Selected: {{ selectedBets.length }}/10</span>
-          <button @click="selectedBets = []" class="text-[10px] text-red-400">Clear All</button>
+          <button @click="selectedBets = []" class="text-[10px] text-red-400 touch-manipulation">Clear All</button>
         </div>
-        <div class="flex flex-wrap gap-1 mb-4">
+        <div class="flex flex-wrap gap-1 mb-4 max-h-20 overflow-y-auto">
           <span v-for="bet in selectedBets" :key="bet.matchId" class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-1 rounded flex items-center gap-1">
-            {{ bet.match.homeTeam.slice(0, 3) }} vs {{ bet.match.awayTeam.slice(0, 3) }} ({{ bet.type }})
-            <button @click="removeBet(bet.matchId)" class="text-white/60 hover:text-white">×</button>
+            {{ getTeamName(bet.match.homeTeam).slice(0, 3) }} vs {{ getTeamName(bet.match.awayTeam).slice(0, 3) }} ({{ bet.type }})
+            <button @click="removeBet(bet.matchId)" class="text-white/60 hover:text-white touch-manipulation">×</button>
           </span>
         </div>
         
         <div class="mb-4">
           <label class="block text-xs text-white/50 mb-2">Bet Amount</label>
-          <div class="flex gap-2 mb-2"><button v-for="a in [1000, 2000, 5000, 10000]" :key="a" @click="betAmount = a" :class="['flex-1 py-2 rounded-lg text-xs font-bold', betAmount === a ? 'bg-orange-500' : 'bg-white/10']">{{ formatBalance(a) }}</button></div>
-          <input v-model.number="betAmount" type="number" min="100" class="w-full bg-white/5 rounded-xl px-4 py-3 text-sm text-center border border-white/10 focus:border-orange-500 focus:outline-none">
+          <div class="flex gap-2 mb-2">
+            <button v-for="a in [1000, 2000, 5000, 10000]" :key="a" @click="betAmount = a" :class="['flex-1 py-2 rounded-lg text-xs font-bold touch-manipulation active:scale-95', betAmount === a ? 'bg-orange-500' : 'bg-white/10']">{{ formatBalance(a) }}</button>
+          </div>
+          <input v-model.number="betAmount" type="number" min="100" inputmode="numeric" class="w-full bg-white/5 rounded-xl px-4 py-3 text-sm text-center border border-white/10 focus:border-orange-500 focus:outline-none">
         </div>
 
         <div class="flex justify-between text-sm"><span class="text-white/50">Total:</span><span class="font-black text-amber-400">{{ formatBalance(betAmount) }} MMK</span></div>
       </div>
       
-      <div v-if="selectedBets.length < 3" class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center"><p class="text-xs text-yellow-400">Select at least 3 matches for Maung bet</p></div>
+      <div v-if="selectedBets.length < 3" class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
+        <p class="text-xs text-yellow-400">Select at least 3 matches for Maung bet</p>
+      </div>
       
-      <button @click="placeBetHandler" :disabled="!canPlaceBet || bettingLoading" :class="['w-full py-4 rounded-xl text-sm font-bold transition-all active:scale-[0.98]', canPlaceBet && !bettingLoading ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-lg shadow-orange-500/25' : 'bg-white/10 text-white/30']">{{ bettingLoading ? 'Placing...' : 'Place Maung Bet' }}</button>
+      <button @click="placeBetHandler" :disabled="!canPlaceBet || bettingLoading" :class="['w-full py-4 rounded-xl text-sm font-bold transition-colors active:scale-[0.98] touch-manipulation min-h-[52px]', canPlaceBet && !bettingLoading ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-lg shadow-orange-500/25' : 'bg-white/10 text-white/30']">
+        {{ bettingLoading ? 'Placing...' : 'Place Maung Bet' }}
+      </button>
     </div>
 
+    <!-- Toast -->
     <Teleport to="body">
       <Transition name="slide">
-        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-[400px] mx-auto"><div :class="['p-4 rounded-xl text-center font-medium text-sm shadow-xl', toast.type === 'success' ? 'bg-green-500' : 'bg-red-500']">{{ toast.msg }}</div></div>
+        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-[400px] mx-auto">
+          <div :class="['p-4 rounded-xl text-center font-medium text-sm shadow-xl', toast.type === 'success' ? 'bg-green-500' : 'bg-red-500']">{{ toast.msg }}</div>
+        </div>
       </Transition>
     </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSoccerBetting } from '~/composables/useSoccerBetting'
 
+// Lazy load - define page meta
+definePageMeta({
+  keepalive: true
+})
+
 const { userBalance, isLoggedIn, refreshProfile } = useAuth()
-const { matches, loading, bettingLoading, loadMatches, placeMaungBet } = useSoccerBetting()
+
+// Redirect if not logged in
+if (!isLoggedIn.value) {
+  await navigateTo('/login')
+}
+
+const { matches, loading, loadingMore, bettingLoading, matchesHasMore, loadMatches, loadMoreMatches, placeMaungBet } = useSoccerBetting()
 
 const selectedBets = ref([])
 const betAmount = ref(1000)
 const toast = ref(null)
+const infiniteScrollTrigger = ref(null)
+let observer = null
 
-const canPlaceBet = computed(() => selectedBets.value.length >= 3 && selectedBets.value.length <= 10 && betAmount.value >= 100 && betAmount.value <= userBalance.value && isLoggedIn.value)
+const canPlaceBet = computed(() => 
+  selectedBets.value.length >= 3 && 
+  selectedBets.value.length <= 10 && 
+  betAmount.value >= 100 && 
+  betAmount.value <= userBalance.value && 
+  isLoggedIn.value
+)
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const formatMatchDate = (ms) => ms ? new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'On_Progress': return 'bg-green-500/20 text-green-400'
+    case 'Finished': return 'bg-gray-500/20 text-gray-400'
+    default: return 'bg-yellow-500/20 text-yellow-400'
+  }
+}
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 'On_Progress': return 'Open for Betting'
+    case 'Finished': return 'Match Finished'
+    default: return 'Unknown Status'
+  }
+}
+
+const getTeamName = (team) => {
+  if (typeof team === 'string') return team
+  if (team && typeof team === 'object') return team.nameInMM || team.nameInEng || 'Team'
+  return 'Team'
+}
+
 const isSelected = (matchId, type) => selectedBets.value.some(b => b.matchId === matchId && b.type === type)
 
 const toggleSelection = (match, type) => {
+  if (!match.betOpen) {
+    showToast('Betting is closed for this match', 'error')
+    return
+  }
+  
   if (selectedBets.value.length >= 10 && !isSelected(match.id, type)) {
     showToast('Maximum 10 selections allowed', 'error')
     return
@@ -151,10 +252,40 @@ const placeBetHandler = async () => {
   }
 }
 
-onMounted(() => loadMatches('Maung'))
+const refreshMatches = () => loadMatches('Maung', true)
+
+// Infinite scroll setup
+const setupInfiniteScroll = () => {
+  if (!infiniteScrollTrigger.value) return
+  
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && matchesHasMore.value && !loadingMore.value && !loading.value) {
+        loadMoreMatches()
+      }
+    },
+    { rootMargin: '100px', threshold: 0.1 }
+  )
+  
+  observer.observe(infiniteScrollTrigger.value)
+}
+
+onMounted(async () => {
+  await loadMatches('Maung')
+  await nextTick()
+  setupInfiniteScroll()
+})
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+})
 </script>
 
 <style>
 .slide-enter-active, .slide-leave-active { transition: all 0.3s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-20px); }
+.touch-manipulation { touch-action: manipulation; }
 </style>

@@ -170,6 +170,11 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useResults } from '~/composables/useResults'
 
+// Lazy load - define page meta
+definePageMeta({
+  keepalive: true
+})
+
 const { 
   results2D, 
   results3D, 

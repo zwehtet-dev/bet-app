@@ -2,52 +2,78 @@ import { ref, computed } from 'vue'
 import { useApi } from './useApi'
 import { useAuth } from './useAuth'
 
+// Singleton state for pagination
+const matchesPage = ref(0)
+const matchesHasMore = ref(true)
+const PAGE_SIZE = 10
+
 export const useSoccerBetting = () => {
   const api = useApi()
   const auth = useAuth()
 
   const loading = ref(false)
+  const loadingMore = ref(false)
   const bettingLoading = ref(false)
   const matches = ref([])
   const selectedBets = ref([])
   const soccerBetHistory = ref([])
+  const currentGameType = ref('Body')
 
-  // Load soccer matches based on type (Body or Maung)
-  const loadMatches = async (gameType = 'Body') => {
-    loading.value = true
+  // Transform API response to frontend format
+  const transformMatch = (game, gameType) => ({
+    id: game.id,
+    token: game.token,
+    homeTeam: game.homeTeam || { nameInMM: 'Home Team', nameInEng: 'Home Team' },
+    awayTeam: game.awayTeam || { nameInMM: 'Away Team', nameInEng: 'Away Team' },
+    homeTeamId: game.homeTeamId,
+    awayTeamId: game.awayTeamId,
+    leagueGroupName: game.leagueGroupName,
+    leagueGroupId: game.leagueGroupId,
+    startDateInMilliSeconds: game.startDateInMilliSeconds,
+    endDateInMilliSeconds: game.endDateInMilliSeconds,
+    homeBet: game.homeBet,
+    awayBet: game.awayBet,
+    gp: game.gp,
+    status: game.status,
+    betOpen: game.betOpen,
+    gameOpen: game.gameOpen,
+    liveOpen: game.liveOpen,
+    liveLink: game.liveLink,
+    liveCost: game.liveCost,
+    homeResult: game.homeResult,
+    awayResult: game.awayResult,
+    matchClone: game.matchClone,
+    gameType: gameType,
+    createdDateInMilliSeconds: game.createdDateInMilliSeconds,
+    updatedDateInMilliSeconds: game.updatedDateInMilliSeconds
+  })
+
+  // Load soccer matches with pagination support
+  const loadMatches = async (gameType = 'Body', reset = true) => {
+    if (reset) {
+      loading.value = true
+      matchesPage.value = 0
+      matchesHasMore.value = true
+      matches.value = []
+    }
+    
+    currentGameType.value = gameType
 
     try {
       const response = await api.getSoccerGames(gameType)
 
       if (response.msgState === 'data') {
-        // Transform API response to frontend format
-        matches.value = (response.data || []).map(game => ({
-          id: game.id,
-          token: game.token,
-          homeTeam: game.homeTeamNameInEng || game.homeTeamNameInMM,
-          homeTeamMM: game.homeTeamNameInMM,
-          awayTeam: game.awayTeamNameInEng || game.awayTeamNameInMM,
-          awayTeamMM: game.awayTeamNameInMM,
-          homeTeamId: game.homeTeamId,
-          awayTeamId: game.awayTeamId,
-          league: game.leagueGroupName,
-          leagueGroupId: game.leagueGroupId,
-          matchDate: game.startDateInMilliSeconds ? new Date(game.startDateInMilliSeconds).toISOString().split('T')[0] : null,
-          matchTime: game.startDateInMilliSeconds ? new Date(game.startDateInMilliSeconds).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : null,
-          startDate: game.startDateInMilliSeconds,
-          endDate: game.endDateInMilliSeconds,
-          homeBet: game.homeBet,
-          awayBet: game.awayBet,
-          gp: game.gp,
-          status: game.status === 'On_Progress' ? 'upcoming' : game.status?.toLowerCase(),
-          betOpen: game.betOpen,
-          liveOpen: game.liveOpen,
-          liveLink: game.liveLink,
-          liveCost: game.liveCost,
-          homeResult: game.homeResult,
-          awayResult: game.awayResult,
-          gameType: gameType
-        }))
+        const newMatches = (response.data || []).map(game => transformMatch(game, gameType))
+        
+        if (reset) {
+          matches.value = newMatches
+        } else {
+          matches.value = [...matches.value, ...newMatches]
+        }
+        
+        // Check if there's more data (API doesn't support pagination yet, so we load all)
+        matchesHasMore.value = false
+        
         return { success: true, data: matches.value }
       }
       return { success: false, error: 'Failed to load matches' }
@@ -55,10 +81,24 @@ export const useSoccerBetting = () => {
       return { success: false, error: 'Network error' }
     } finally {
       loading.value = false
+      loadingMore.value = false
     }
   }
 
-  // Place soccer bet (Maung style - single amount for all bets, min 3 max 10 selections)
+  // Load more matches (for infinite scroll - currently loads all at once since API doesn't paginate)
+  const loadMoreMatches = async () => {
+    if (loadingMore.value || !matchesHasMore.value) return { success: false }
+    
+    loadingMore.value = true
+    matchesPage.value++
+    
+    // Since API doesn't support pagination, we just return
+    loadingMore.value = false
+    matchesHasMore.value = false
+    return { success: true, hasMore: false }
+  }
+
+  // Place soccer bet (Maung style)
   const placeMaungBet = async (amount, soccerBetDetails) => {
     if (!auth.isLoggedIn.value) {
       return { success: false, error: 'Please login first' }
@@ -72,9 +112,7 @@ export const useSoccerBetting = () => {
       return { success: false, error: 'Maximum 10 selections allowed for Maung bet' }
     }
 
-    const totalAmount = amount
-
-    if (auth.userBalance.value < totalAmount) {
+    if (auth.userBalance.value < amount) {
       return { success: false, error: 'Insufficient balance' }
     }
 
@@ -96,7 +134,7 @@ export const useSoccerBetting = () => {
       if (response.msgState === 'data') {
         await auth.refreshProfile()
         clearSelectedBets()
-        return { success: true, data: response.data, message: `Maung bet placed successfully! Total: ${totalAmount.toLocaleString()} MMK` }
+        return { success: true, data: response.data, message: `Maung bet placed successfully! Total: ${amount.toLocaleString()} MMK` }
       }
       return { success: false, error: response.errState || 'Failed to place bet' }
     } catch (error) {
@@ -106,7 +144,7 @@ export const useSoccerBetting = () => {
     }
   }
 
-  // Place soccer bet (Body style - individual amounts per bet)
+  // Place soccer bet (Body style)
   const placeBodyBet = async (soccerBetDetails) => {
     if (!auth.isLoggedIn.value) {
       return { success: false, error: 'Please login first' }
@@ -136,7 +174,7 @@ export const useSoccerBetting = () => {
       if (response.msgState === 'data') {
         await auth.refreshProfile()
         clearSelectedBets()
-        return { success: true, data: response.data, message: `Body bet placed successfully! Total: ${totalAmount.toLocaleString()} MMK` }
+        return { success: true, data: response.data, message: `Bawdi bet placed successfully! Total: ${totalAmount.toLocaleString()} MMK` }
       }
       return { success: false, error: response.errState || 'Failed to place bet' }
     } catch (error) {
@@ -160,20 +198,16 @@ export const useSoccerBetting = () => {
   // Get soccer bet history
   const getSoccerBetHistory = async (params = {}) => {
     if (!auth.isLoggedIn.value) {
-      console.log('User not logged in, skipping soccer bet history fetch')
       return { success: false, error: 'Not logged in' }
     }
     
     loading.value = true
 
     try {
-      console.log('Fetching soccer bet history with params:', params)
       const response = await api.getSoccerBetHistory(params)
-      console.log('Soccer bet history response:', response)
 
       if (response.msgState === 'data') {
         const bets = response.data || []
-        console.log('Soccer bets count:', bets.length)
         
         soccerBetHistory.value = bets.map(bet => ({
           id: bet.id,
@@ -184,17 +218,52 @@ export const useSoccerBetting = () => {
           totalAmount: bet.totalAmount || bet.amount,
           winAmount: bet.winAmount || 0,
           createdAt: bet.createdDateInMilliSeconds ? new Date(bet.createdDateInMilliSeconds).toISOString() : null,
-          soccerBetDetails: bet.soccerBetDetails || []
+          soccerBetDetails: (bet.soccerBetDetails || []).map(detail => ({
+            ...detail,
+            homeTeamName: detail.homeTeamName || detail.homeTeam?.nameInMM || detail.homeTeam?.nameInEng || 'Home',
+            awayTeamName: detail.awayTeamName || detail.awayTeam?.nameInMM || detail.awayTeam?.nameInEng || 'Away',
+            matchDisplay: detail.homeTeamName && detail.awayTeamName 
+              ? `${detail.homeTeamName} vs ${detail.awayTeamName}`
+              : detail.gameId ? `Match #${detail.gameId}` : 'Football Match',
+            betTypeDisplay: getBetTypeDisplayText(detail),
+            gameId: detail.gameId,
+            betTeamId: detail.betTeamId,
+            betUnder: detail.betUnder,
+            amount: detail.amount,
+            isWin: detail.isWin,
+            homeTeamId: detail.homeTeamId,
+            awayTeamId: detail.awayTeamId
+          }))
         }))
+        
         return { success: true, data: soccerBetHistory.value }
       }
       return { success: false, error: 'Failed to load bet history' }
     } catch (error) {
-      console.error('Failed to load soccer bet history:', error)
       return { success: false, error: 'Network error' }
     } finally {
       loading.value = false
     }
+  }
+
+  const getBetTypeDisplayText = (detail) => {
+    let betType = 'Team Win'
+    
+    if (detail.betTeamId) {
+      if (detail.homeTeamId && detail.betTeamId === detail.homeTeamId) {
+        betType = 'Home Win'
+      } else if (detail.awayTeamId && detail.betTeamId === detail.awayTeamId) {
+        betType = 'Away Win'
+      }
+    }
+    
+    if (detail.betUnder === true) {
+      betType += ' (Under)'
+    } else if (detail.betUnder === false && detail.betType) {
+      betType += ' (Over)'
+    }
+    
+    return betType
   }
 
   const mapSoccerBetStatus = (status) => {
@@ -206,7 +275,6 @@ export const useSoccerBetting = () => {
     }
   }
 
-  // Get bet detail
   const getSoccerBetDetail = async (betId) => {
     loading.value = true
 
@@ -224,7 +292,6 @@ export const useSoccerBetting = () => {
     }
   }
 
-  // Bet selection management
   const addBet = (bet) => {
     const existingIndex = selectedBets.value.findIndex(b => b.matchId === bet.matchId && b.optionId === bet.optionId)
     if (existingIndex > -1) {
@@ -252,7 +319,6 @@ export const useSoccerBetting = () => {
     }
   }
 
-  // Computed properties
   const totalSelectedBets = computed(() => selectedBets.value.length)
   const totalBetAmount = computed(() => selectedBets.value.reduce((sum, bet) => sum + (bet.amount || 0), 0))
   const potentialWin = computed(() => selectedBets.value.reduce((sum, bet) => {
@@ -268,8 +334,10 @@ export const useSoccerBetting = () => {
   const getBetStatusBg = (status) => status === 'won' ? 'bg-green-500' : status === 'lost' ? 'bg-red-500' : 'bg-yellow-500'
 
   return {
-    loading, bettingLoading, matches, selectedBets, soccerBetHistory,
-    loadMatches, placeSoccerBet, placeMaungBet, placeBodyBet, getSoccerBetHistory, getSoccerBetDetail,
+    loading, loadingMore, bettingLoading, matches, selectedBets, soccerBetHistory,
+    matchesHasMore,
+    loadMatches, loadMoreMatches, placeSoccerBet, placeMaungBet, placeBodyBet, 
+    getSoccerBetHistory, getSoccerBetDetail,
     addBet, removeBet, clearSelectedBets, updateBetAmount,
     totalSelectedBets, totalBetAmount, potentialWin, canPlaceBet,
     formatAmount, formatOdds, getBetStatusColor, getBetStatusBg

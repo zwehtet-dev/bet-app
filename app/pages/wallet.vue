@@ -37,7 +37,12 @@
       <div v-if="paymentMethodsLoading" class="text-center py-4"><p class="text-sm text-white/40">Loading...</p></div>
       <div v-else class="grid grid-cols-4 gap-2">
         <div v-for="m in activePaymentMethods" :key="m.id" class="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
-          <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mx-auto mb-1.5 text-[10px] font-bold">{{ m.name.slice(0, 2) }}</div>
+          <div class="w-9 h-9 rounded-lg overflow-hidden mx-auto mb-1.5 bg-white/10">
+            <img v-if="m.imageLink" :src="m.imageLink" :alt="m.name" class="w-full h-full object-cover" @error="handleImageError">
+            <div v-else class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
+              {{ m.name.slice(0, 2) }}
+            </div>
+          </div>
           <p class="text-[10px] font-medium truncate">{{ m.name }}</p>
         </div>
       </div>
@@ -67,7 +72,23 @@
             
             <div v-if="modal === 'deposit'" class="space-y-4">
               <div><label class="block text-xs text-white/60 mb-2">Payment Method</label><select v-model="form.methodId" class="w-full bg-white/10 rounded-xl px-4 py-3 text-sm text-white border border-white/10"><option value="" class="bg-slate-800 text-white">Select method</option><option v-for="m in activePaymentMethods" :key="m.id" :value="m.id" class="bg-slate-800 text-white">{{ m.name }}</option></select></div>
-              <div v-if="selectedMethod" class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3"><p class="text-xs text-blue-300 mb-2">Transfer to:</p><p v-for="phone in selectedMethod.phoneNoList" :key="phone" class="text-sm font-bold text-amber-400">{{ phone }}</p><p class="text-xs text-white/60 mt-1">{{ selectedMethod.name }}</p></div>
+              <div v-if="selectedMethod" class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-8 h-8 rounded-lg overflow-hidden bg-white/10">
+                    <img v-if="selectedMethod.imageLink" :src="selectedMethod.imageLink" :alt="selectedMethod.name" class="w-full h-full object-cover" @error="handleImageError">
+                    <div v-else class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-[8px] font-bold text-white">
+                      {{ selectedMethod.name.slice(0, 2) }}
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs text-blue-300">Transfer to:</p>
+                    <p class="text-xs text-white/60">{{ selectedMethod.name }}</p>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <p v-for="phone in selectedMethod.phoneNoList" :key="phone" class="text-sm font-bold text-amber-400">{{ phone }}</p>
+                </div>
+              </div>
               <div v-if="selectedMethod"><label class="block text-xs text-white/60 mb-2">Transaction ID (last 6 digits)</label><input v-model="form.txId" type="text" maxlength="20" placeholder="123456" class="w-full bg-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 border border-white/10 focus:border-green-500 focus:outline-none"></div>
               <button @click="submitDeposit" :disabled="!canDeposit || loading" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-green-500/25 active:scale-[0.98] disabled:opacity-50">{{ loading ? 'Processing...' : t('deposit') }}</button>
             </div>
@@ -75,7 +96,7 @@
             <div v-if="modal === 'withdraw'" class="space-y-4">
               <div class="bg-white/10 rounded-xl p-3 border border-white/10"><p class="text-xs text-white/60">Available</p><p class="text-xl font-black text-white">{{ formatAmount(userBalance) }} {{ t('mmk') }}</p></div>
               <div><label class="block text-xs text-white/60 mb-2">Amount</label><input v-model.number="form.amount" type="number" min="1000" :max="userBalance" class="w-full bg-white/10 rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-red-500 focus:outline-none"><div class="flex gap-2 mt-2"><button v-for="p in [25, 50, 75, 100]" :key="p" @click="form.amount = Math.floor(userBalance * p / 100)" class="flex-1 py-2 bg-white/10 rounded-lg text-xs font-medium text-white/80 hover:bg-white/15">{{ p }}%</button></div></div>
-              <div><label class="block text-xs text-white/60 mb-2">Withdraw to</label><select v-model="form.methodId" class="w-full bg-white/10 rounded-xl px-4 py-3 text-sm text-white border border-white/10"><option value="" class="bg-slate-800 text-white">Select method</option><option v-for="m in activePaymentMethods" :key="m.id" :value="m.id" class="bg-slate-800 text-white">{{ m.name }}</option></select></div>
+              <div><label class="block text-xs text-white/60 mb-2">Withdraw to</label><select v-model="form.methodId" class="w-full bg-white/10 rounded-xl px-4 py-3 text-sm text-white border border-white/10"><option value="" class="bg-slate-800 text-white">Select method</option><option v-for="m in activePaymentMethods" :key="m.id" :value="m.id" class="bg-slate-800 text-white flex items-center gap-2">{{ m.name }}</option></select></div>
               <div v-if="form.methodId"><label class="block text-xs text-white/60 mb-2">Your Account Number</label><input v-model="form.accNum" type="text" placeholder="09123456789" class="w-full bg-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 border border-white/10 focus:border-red-500 focus:outline-none"></div>
               <button @click="submitWithdraw" :disabled="!canWithdraw || loading" class="w-full bg-gradient-to-r from-red-500 to-rose-600 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-red-500/25 active:scale-[0.98] disabled:opacity-50">{{ loading ? 'Processing...' : t('withdraw') }}</button>
             </div>
@@ -99,8 +120,18 @@ import { useAuth } from '~/composables/useAuth'
 import { useWallet } from '~/composables/useWallet'
 import { useApi } from '~/composables/useApi'
 
+// Lazy load - define page meta
+definePageMeta({
+  keepalive: true
+})
+
 const { t } = useLanguage()
 const { userBalance, isLoggedIn, refreshProfile } = useAuth()
+
+// Redirect if not logged in
+if (!isLoggedIn.value) {
+  await navigateTo('/login')
+}
 const { paymentMethods, transactions, paymentMethodsLoading, transactionLoading, loadPaymentMethods, loadTransactionHistory, requestDeposit, requestWithdrawal, activePaymentMethods, totalTransactions, totalDeposits, totalWithdrawals, getStatusBadgeColor, formatAmount } = useWallet()
 const api = useApi()
 
@@ -120,6 +151,11 @@ const canWithdraw = computed(() => form.value.amount >= 1000 && form.value.amoun
 const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 const resetForm = () => { form.value = { amount: 10000, methodId: '', txId: '', accNum: '' } }
+const handleImageError = (event) => { 
+  event.target.style.display = 'none'
+  const fallback = event.target.nextElementSibling
+  if (fallback) fallback.style.display = 'flex'
+}
 
 const checkBlocked = async () => {
   const result = await api.checkTransactionBlocked()

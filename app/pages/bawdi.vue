@@ -1,92 +1,196 @@
 <template>
   <div class="text-white">
-    <div class="px-4 py-3">
-      <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl p-4 border border-green-500/20">
-        <div class="flex items-center justify-between">
-          <div><p class="text-[10px] text-white/50">Body Betting</p><p class="text-sm font-bold">⚽ Football</p><p class="text-[10px] text-white/40">Individual bets</p></div>
-          <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center"><span class="text-2xl">⚽</span></div>
+    <!-- Loading Skeleton -->
+    <div v-if="loading && !matches.length" class="px-4 py-4 space-y-3">
+      <div v-for="i in 5" :key="i" class="bg-white/5 rounded-xl p-4 border border-white/5 animate-pulse">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-4 w-20 bg-white/10 rounded"></div>
+          <div class="h-3 w-16 bg-white/10 rounded"></div>
+        </div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex-1 text-center"><div class="h-4 w-24 bg-white/10 rounded mx-auto"></div></div>
+          <div class="px-4"><div class="h-3 w-6 bg-white/10 rounded"></div></div>
+          <div class="flex-1 text-center"><div class="h-4 w-24 bg-white/10 rounded mx-auto"></div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="h-10 bg-white/10 rounded-lg"></div>
+          <div class="h-10 bg-white/10 rounded-lg"></div>
         </div>
       </div>
     </div>
 
-    <div v-if="loading" class="px-4 py-8 text-center"><p class="text-sm text-white/40">Loading matches...</p></div>
-
-    <div v-else-if="!matches.length" class="px-4 py-8 text-center">
+    <!-- Empty State -->
+    <div v-else-if="!loading && !matches.length" class="px-4 py-8 text-center">
       <div class="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">⚽</span></div>
       <p class="text-sm text-white/40">No matches available</p>
+      <button @click="refreshMatches" class="mt-4 px-4 py-2 bg-white/10 rounded-xl text-xs font-medium touch-manipulation active:scale-95">
+        Refresh
+      </button>
     </div>
 
+    <!-- Matches List with Infinite Scroll -->
     <div v-else class="px-4 py-2 space-y-3">
       <div v-for="match in matches" :key="match.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded">{{ match.league }}</span>
-          <span class="text-[10px] text-white/40">{{ formatMatchDate(match.startDate) }}</span>
+          <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
+            {{ match.leagueGroupName || match.league }}
+          </span>
+          <span class="text-[10px] text-white/40">{{ formatMatchDate(match.startDateInMilliSeconds) }}</span>
         </div>
         
         <div class="flex items-center justify-between mb-4">
           <div class="flex-1 text-center">
-            <p class="text-sm font-bold">{{ match.homeTeam }}</p>
-            <p v-if="match.homeBet" class="text-[10px] text-amber-400">{{ match.homeBet > 0 ? '+' : '' }}{{ match.homeBet }}</p>
+            <p class="text-sm font-bold">{{ match.homeTeam?.nameInMM || match.homeTeam?.nameInEng || 'Home Team' }}</p>
+            <p v-if="match.homeBet" class="text-[10px] text-amber-400">{{ match.homeBet }}</p>
           </div>
           <div class="px-4"><span class="text-xs text-white/40">VS</span></div>
           <div class="flex-1 text-center">
-            <p class="text-sm font-bold">{{ match.awayTeam }}</p>
-            <p v-if="match.awayBet" class="text-[10px] text-amber-400">{{ match.awayBet > 0 ? '+' : '' }}{{ match.awayBet }}</p>
+            <p class="text-sm font-bold">{{ match.awayTeam?.nameInMM || match.awayTeam?.nameInEng || 'Away Team' }}</p>
+            <p v-if="match.awayBet" class="text-[10px] text-amber-400">{{ match.awayBet }}</p>
           </div>
         </div>
 
-        <div v-if="match.gp" class="text-center mb-3"><span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span></div>
+        <div v-if="match.gp" class="text-center mb-3">
+          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span>
+        </div>
+
+        <div class="flex items-center justify-center mb-3">
+          <span :class="['text-xs px-2 py-1 rounded', getStatusColor(match.status)]">
+            {{ getStatusText(match.status) }}
+          </span>
+        </div>
 
         <div class="grid grid-cols-2 gap-2 mb-3">
-          <button @click="selectBet(match, 'home')" :class="['py-2.5 rounded-lg text-xs font-bold transition-all', isSelected(match.id, 'home') ? 'bg-green-500' : 'bg-white/10 hover:bg-white/20']">Home</button>
-          <button @click="selectBet(match, 'away')" :class="['py-2.5 rounded-lg text-xs font-bold transition-all', isSelected(match.id, 'away') ? 'bg-green-500' : 'bg-white/10 hover:bg-white/20']">Away</button>
+          <button 
+            @click="selectBet(match, 'home')" 
+            :disabled="!match.betOpen"
+            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
+              isSelected(match.id, 'home') ? 'bg-green-500' : 'bg-white/10']">
+            Home
+          </button>
+          <button 
+            @click="selectBet(match, 'away')" 
+            :disabled="!match.betOpen"
+            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
+              isSelected(match.id, 'away') ? 'bg-green-500' : 'bg-white/10']">
+            Away
+          </button>
         </div>
 
+        <!-- Amount input for selected match -->
         <div v-if="getSelectedBet(match.id)" class="flex items-center gap-2">
           <span class="text-[10px] text-white/40">Amount:</span>
-          <input v-model.number="getSelectedBet(match.id).amount" type="number" min="100" class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-sm text-center border border-white/10 focus:border-green-500 focus:outline-none">
+          <input 
+            v-model.number="getSelectedBet(match.id).amount" 
+            type="number" 
+            min="100"
+            inputmode="numeric"
+            :disabled="!match.betOpen"
+            class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-sm text-center border border-white/10 focus:border-green-500 focus:outline-none disabled:bg-gray-600 disabled:text-gray-400">
         </div>
       </div>
+
+      <!-- Loading More Indicator -->
+      <div v-if="loadingMore" class="py-4 flex justify-center">
+        <div class="w-6 h-6 border-2 border-white/20 border-t-green-500 rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Infinite Scroll Trigger -->
+      <div ref="infiniteScrollTrigger" class="h-4"></div>
     </div>
 
+    <!-- Selected Bets Summary -->
     <div v-if="selectedBets.length" class="px-4 py-4 pb-6">
       <div class="bg-white/5 rounded-xl p-4 border border-white/5 mb-4">
-        <div class="flex justify-between text-sm mb-2"><span class="text-white/50">Selected:</span><span class="font-bold">{{ selectedBets.length }} bets</span></div>
-        <div class="flex justify-between text-sm"><span class="text-white/50">Total:</span><span class="font-black text-amber-400">{{ formatBalance(totalAmount) }} MMK</span></div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-white/50">Selected:</span>
+          <span class="font-bold">{{ selectedBets.length }} bets</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-white/50">Total:</span>
+          <span class="font-black text-amber-400">{{ formatBalance(totalAmount) }} MMK</span>
+        </div>
       </div>
-      <button @click="placeBetHandler" :disabled="!canPlaceBet || bettingLoading" :class="['w-full py-4 rounded-xl text-sm font-bold transition-all active:scale-[0.98]', canPlaceBet && !bettingLoading ? 'bg-gradient-to-r from-green-500 to-emerald-500 shadow-lg shadow-green-500/25' : 'bg-white/10 text-white/30']">{{ bettingLoading ? 'Placing...' : 'Place Body Bet' }}</button>
+      <button @click="placeBetHandler" :disabled="!canPlaceBet || bettingLoading" :class="['w-full py-4 rounded-xl text-sm font-bold transition-colors active:scale-[0.98] touch-manipulation min-h-[52px]', canPlaceBet && !bettingLoading ? 'bg-gradient-to-r from-green-500 to-emerald-500 shadow-lg shadow-green-500/25' : 'bg-white/10 text-white/30']">
+        {{ bettingLoading ? 'Placing...' : 'Place Bawdi Bet' }}
+      </button>
     </div>
 
+    <!-- Toast -->
     <Teleport to="body">
       <Transition name="slide">
-        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-[400px] mx-auto"><div :class="['p-4 rounded-xl text-center font-medium text-sm shadow-xl', toast.type === 'success' ? 'bg-green-500' : 'bg-red-500']">{{ toast.msg }}</div></div>
+        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-[400px] mx-auto">
+          <div :class="['p-4 rounded-xl text-center font-medium text-sm shadow-xl', toast.type === 'success' ? 'bg-green-500' : 'bg-red-500']">{{ toast.msg }}</div>
+        </div>
       </Transition>
     </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSoccerBetting } from '~/composables/useSoccerBetting'
 
+// Lazy load - define page meta
+definePageMeta({
+  keepalive: true
+})
+
 const { userBalance, isLoggedIn, refreshProfile } = useAuth()
-const { matches, loading, bettingLoading, loadMatches, placeBodyBet } = useSoccerBetting()
+
+// Redirect if not logged in
+if (!isLoggedIn.value) {
+  await navigateTo('/login')
+}
+
+const { matches, loading, loadingMore, bettingLoading, matchesHasMore, loadMatches, loadMoreMatches, placeBodyBet } = useSoccerBetting()
 
 const selectedBets = ref([])
 const toast = ref(null)
+const infiniteScrollTrigger = ref(null)
+let observer = null
 
 const totalAmount = computed(() => selectedBets.value.reduce((sum, bet) => sum + (bet.amount || 0), 0))
-const canPlaceBet = computed(() => selectedBets.value.length > 0 && totalAmount.value > 0 && totalAmount.value <= userBalance.value && isLoggedIn.value && selectedBets.value.every(b => b.amount >= 100))
+const canPlaceBet = computed(() => 
+  selectedBets.value.length > 0 && 
+  totalAmount.value > 0 && 
+  totalAmount.value <= userBalance.value && 
+  isLoggedIn.value && 
+  selectedBets.value.every(b => b.amount >= 100)
+)
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const formatMatchDate = (ms) => ms ? new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'On_Progress': return 'bg-green-500/20 text-green-400'
+    case 'Finished': return 'bg-gray-500/20 text-gray-400'
+    default: return 'bg-yellow-500/20 text-yellow-400'
+  }
+}
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 'On_Progress': return 'Open for Betting'
+    case 'Finished': return 'Match Finished'
+    default: return 'Unknown Status'
+  }
+}
+
 const isSelected = (matchId, type) => selectedBets.value.some(b => b.matchId === matchId && b.type === type)
 const getSelectedBet = (matchId) => selectedBets.value.find(b => b.matchId === matchId)
 
 const selectBet = (match, type) => {
+  if (!match.betOpen) {
+    showToast('Betting is closed for this match', 'error')
+    return
+  }
+  
   const existingIndex = selectedBets.value.findIndex(b => b.matchId === match.id)
   
   if (existingIndex > -1) {
@@ -122,7 +226,7 @@ const placeBetHandler = async () => {
   const result = await placeBodyBet(betDetails)
   
   if (result.success) {
-    showToast(result.message || 'Body bet placed successfully!', 'success')
+    showToast(result.message || 'Bawdi bet placed successfully!', 'success')
     selectedBets.value = []
     await refreshProfile()
   } else {
@@ -130,10 +234,40 @@ const placeBetHandler = async () => {
   }
 }
 
-onMounted(() => loadMatches('Body'))
+const refreshMatches = () => loadMatches('Body', true)
+
+// Infinite scroll setup
+const setupInfiniteScroll = () => {
+  if (!infiniteScrollTrigger.value) return
+  
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && matchesHasMore.value && !loadingMore.value && !loading.value) {
+        loadMoreMatches()
+      }
+    },
+    { rootMargin: '100px', threshold: 0.1 }
+  )
+  
+  observer.observe(infiniteScrollTrigger.value)
+}
+
+onMounted(async () => {
+  await loadMatches('Body')
+  await nextTick()
+  setupInfiniteScroll()
+})
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+})
 </script>
 
 <style>
 .slide-enter-active, .slide-leave-active { transition: all 0.3s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-20px); }
+.touch-manipulation { touch-action: manipulation; }
 </style>

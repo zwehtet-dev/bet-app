@@ -718,14 +718,22 @@ export const useApi = () => {
         
         // Handle both array and paginated response
         const betList = data.list || data || []
+        console.log('Soccer bet list:', betList)
         return createResponse(betList)
       } else {
-        console.error('Soccer bet history error:', response.status)
-        return createResponse([], 'error', 'fetchErr')
+        console.error('Soccer bet history error:', response.status, response.statusText)
+        // Try to get error details
+        try {
+          const errorData = await response.json()
+          console.error('Error details:', errorData)
+        } catch (e) {
+          console.error('Could not parse error response')
+        }
+        return createResponse([], 'data') // Return empty array instead of error for now
       }
     } catch (err) {
       console.error('Soccer bet history exception:', err)
-      return createResponse([], 'error', 'severErr')
+      return createResponse([], 'data') // Return empty array instead of error for now
     } finally {
       loading.value = false
     }

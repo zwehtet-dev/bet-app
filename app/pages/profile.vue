@@ -84,8 +84,18 @@ import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
 
+// Lazy load - define page meta
+definePageMeta({
+  keepalive: true
+})
+
 const { t, setLanguage, currentLanguage } = useLanguage()
-const { userBalance, logout, userName, userPhone, changePassword: apiChangePassword } = useAuth()
+const { userBalance, logout, userName, userPhone, changePassword: apiChangePassword, isLoggedIn } = useAuth()
+
+// Redirect if not logged in
+if (!isLoggedIn.value) {
+  await navigateTo('/login')
+}
 const api = useApi()
 
 const showPwModal = ref(false)
