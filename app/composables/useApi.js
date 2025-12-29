@@ -1,687 +1,1017 @@
 import { ref } from 'vue'
+import { useRuntimeConfig } from '#app'
+
+// API Configuration - will use runtime config when available
+const getApiBaseUrl = () => {
+  try {
+    const config = useRuntimeConfig()
+    return config.public.apiBaseUrl || 'https://2d3d.pnpmyanmar.com'
+  } catch {
+    return 'https://2d3d.pnpmyanmar.com'
+  }
+}
 
 // Response Model Structure
 const createResponse = (data = null, msgState = 'data', errState = null, pageState = null) => {
-  return {
-    msgState,
-    errState,
-    pageState,
-    data
+  return { msgState, errState, pageState, data }
+}
+
+// HTTP Client - with optional auth
+const httpClient = async (endpoint, options = {}, requireAuth = true) => {
+  const baseUrl = getApiBaseUrl()
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+  
+  // If auth is required but no token, return early
+  if (requireAuth && !token) {
+    console.warn('No token available for authenticated request:', endpoint)
+    return { ok: false, status: 401 }
+  }
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...options.headers
+  }
+
+  const config = {
+    ...options,
+    headers
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}${endpoint}`, config)
+    
+    if (response.status === 401 && requireAuth) {
+      // Token expired, try refresh
+      const refreshed = await tryRefreshToken()
+      if (refreshed) {
+        // Retry with new token
+        const newToken = localStorage.getItem('token')
+        headers.Authorization = `Bearer ${newToken}`
+        return fetch(`${baseUrl}${endpoint}`, { ...config, headers })
+      }
+      // Clear invalid tokens
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+      }
+    }
+
+    return response
+  } catch (err) {
+    console.error('HTTP Client error:', err)
+    throw err
   }
 }
 
-// Demo data storage
-const demoData = {
-  user: {
-    id: 1,
-    name: 'John Doe',
-    secretName: '09123456789',
-    phoneNo: '09123456789',
-    balance: 100000,
-    createdAt: '2024-01-01'
-  },
-  
-  token: 'demo_access_token_12345',
-  refreshToken: 'demo_refresh_token_67890',
-  
-  bets: [
-    {
-      id: 1,
-      gameType: '2D',
-      amount: 1000,
-      digit: '47',
-      status: 'won',
-      createdAt: '2024-12-24T12:00:00Z',
-      session: 'Morning',
-      winAmount: 85000,
-      drawNumber: 'D2024001'
-    },
-    {
-      id: 2,
-      gameType: '3D',
-      amount: 2000,
-      digit: '582',
-      status: 'lost',
-      createdAt: '2024-12-23T18:30:00Z',
-      session: 'Evening',
-      winAmount: 0,
-      drawNumber: 'D2024002'
-    },
-    {
-      id: 3,
-      gameType: '2D',
-      amount: 1500,
-      digit: '23',
-      status: 'pending',
-      createdAt: '2024-12-24T18:00:00Z',
-      session: 'Evening',
-      winAmount: 0,
-      drawNumber: 'D2024003'
-    }
-  ],
-  
-  results: {
-    '2d': [
-      { date: '2024-12-24', session: 'Morning', number: '47', time: '12:00 PM' },
-      { date: '2024-12-23', session: 'Evening', number: '23', time: '6:00 PM' },
-      { date: '2024-12-23', session: 'Morning', number: '91', time: '12:00 PM' }
-    ],
-    '3d': [
-      { date: '2024-12-23', session: 'Evening', number: '582', time: '6:30 PM' },
-      { date: '2024-12-22', session: 'Evening', number: '149', time: '6:30 PM' },
-      { date: '2024-12-21', session: 'Evening', number: '736', time: '6:30 PM' }
-    ]
-  },
-  
-  transactions: [
-    {
-      id: 1,
-      type: 'deposit',
-      amount: 50000,
-      status: 'completed',
-      paymentMethod: 'KBZ Pay',
-      createdAt: '2024-12-20T10:00:00Z'
-    },
-    {
-      id: 2,
-      type: 'withdrawal',
-      amount: 25000,
-      status: 'pending',
-      paymentMethod: 'Wave Money',
-      createdAt: '2024-12-22T14:30:00Z'
-    }
-  ],
-  
-  paymentMethods: [
-    { id: 1, name: 'KBZ Pay', type: 'mobile_banking', isActive: true },
-    { id: 2, name: 'Wave Money', type: 'mobile_banking', isActive: true },
-    { id: 3, name: 'CB Pay', type: 'mobile_banking', isActive: true },
-    { id: 4, name: 'AYA Pay', type: 'mobile_banking', isActive: true }
-  ],
-  
-  carouselImages: [
-    { 
-      id: 1, 
-      imageUrl: 'https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=800&h=400&fit=crop&crop=center', 
-      title: '2D3D လောင်းကစား', 
-      subtitle: 'ယနေ့ပဲ စတင်လိုက်ပါ',
-      isActive: true,
-      bgColor: 'from-blue-600 to-purple-600'
-    },
-    { 
-      id: 2, 
-      imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop&crop=center', 
-      title: 'ကံကောင်းသော နံပါတ်များ', 
-      subtitle: 'သင့်အတွက် အကောင်းဆုံး',
-      isActive: true,
-      bgColor: 'from-green-600 to-blue-600'
-    },
-    { 
-      id: 3, 
-      imageUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&h=400&fit=crop&crop=center', 
-      title: 'ကြီးမားသော ဆုငွေများ', 
-      subtitle: 'အနိုင်ရဖို့ အခွင့်အလမ်း',
-      isActive: true,
-      bgColor: 'from-yellow-600 to-red-600'
-    },
-    { 
-      id: 4, 
-      imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=400&fit=crop&crop=center', 
-      title: 'လုံခြုံသော ငွေပေးချေမှု', 
-      subtitle: 'မိုဘိုင်းဘဏ်များ ပံ့ပိုးမှု',
-      isActive: true,
-      bgColor: 'from-purple-600 to-pink-600'
-    },
-    { 
-      id: 5, 
-      imageUrl: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=400&fit=crop&crop=center', 
-      title: '24/7 ဝန်ဆောင်မှု', 
-      subtitle: 'အချိန်မရွေး လောင်းကစားပါ',
-      isActive: true,
-      bgColor: 'from-indigo-600 to-blue-600'
-    }
-  ],
-  
-  systemSettings: {
-    servicePhoneNo: '09-123-456-789'
-  }
-}
+// Try to refresh token
+const tryRefreshToken = async () => {
+  if (typeof localStorage === 'undefined') return false
+  const refreshToken = localStorage.getItem('refreshToken')
+  if (!refreshToken) return false
 
-// Simulate network delay
-const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms))
+  try {
+    const baseUrl = getApiBaseUrl()
+    const response = await fetch(`${baseUrl}/api/auth/refresh-token/${refreshToken}`)
+    if (response.ok) {
+      const data = await response.json()
+      localStorage.setItem('token', data.accessToken)
+      localStorage.setItem('refreshToken', data.refreshToken)
+      return true
+    }
+  } catch (e) {
+    console.error('Token refresh failed:', e)
+  }
+  return false
+}
 
 export const useApi = () => {
   const loading = ref(false)
   const error = ref(null)
+
+  // ==================== AUTH APIs ====================
   
-  // Authentication APIs
+  // POST /api/auth/login
   const login = async (secretName, password) => {
     loading.value = true
     error.value = null
-    
+    const baseUrl = getApiBaseUrl()
+
     try {
-      await delay()
-      
-      // Simulate login validation
-      if (secretName === '09123456789' && password === 'password') {
-        // Store tokens in localStorage for demo
-        localStorage.setItem('token', demoData.token)
-        localStorage.setItem('refreshToken', demoData.refreshToken)
-        
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secretName, password })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        localStorage.setItem('token', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
         return createResponse({
-          user: demoData.user,
-          token: demoData.token,
-          refreshToken: demoData.refreshToken
+          user: data.user,
+          token: data.accessToken,
+          refreshToken: data.refreshToken
+        })
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        return createResponse(null, 'error', 'userErr')
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // POST /api/auth/signup
+  const signup = async (name, secretName, password, phoneNo) => {
+    loading.value = true
+    error.value = null
+    const baseUrl = getApiBaseUrl()
+
+    try {
+      const response = await fetch(`${baseUrl}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, secretName, password, phoneNo })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        localStorage.setItem('token', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
+        return createResponse({
+          user: data.user,
+          token: data.accessToken,
+          refreshToken: data.refreshToken
         })
       } else {
         return createResponse(null, 'error', 'userErr')
       }
     } catch (err) {
+      console.error('Signup error:', err)
       return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  
-  const signup = async (name, secretName, password, phoneNo) => {
+
+  // GET /api/auth/refresh-token/{refreshToken}
+  const refreshToken = async (token) => {
     loading.value = true
-    error.value = null
-    
+    const baseUrl = getApiBaseUrl()
+
     try {
-      await delay()
-      
-      const newUser = {
-        ...demoData.user,
-        name,
-        secretName,
-        phoneNo,
-        id: Date.now()
+      const response = await fetch(`${baseUrl}/api/auth/refresh-token/${token}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        localStorage.setItem('token', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
+        return createResponse({
+          token: data.accessToken,
+          refreshToken: data.refreshToken,
+          user: data.user
+        })
+      } else {
+        return createResponse(null, 'error', 'tokenErr')
       }
-      
-      return createResponse({
-        user: newUser,
-        token: demoData.token,
-        refreshToken: demoData.refreshToken
-      })
     } catch (err) {
       return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  
-  const refreshToken = async (refreshToken) => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      const newToken = 'new_demo_token_' + Date.now()
-      localStorage.setItem('token', newToken)
-      
-      return createResponse({
-        token: newToken,
-        refreshToken: demoData.refreshToken
-      })
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
+
+  // PUT /api/change-password
   const changePassword = async (oldPassword, newPassword) => {
     loading.value = true
-    
+
     try {
-      await delay()
-      return createResponse({ message: 'Password changed successfully' })
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  // User Management
-  const getUserProfile = async () => {
-    loading.value = true
-    
-    try {
-      await delay()
-      return createResponse(demoData.user)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  // Betting APIs
-  const placeBet = async (gameType, betDetails) => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      const newBet = {
-        id: Date.now(),
-        gameType,
-        betDetails,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        drawNumber: 'D' + Date.now()
-      }
-      
-      // Add to demo data
-      demoData.bets.unshift(newBet)
-      
-      // Deduct balance
-      const totalAmount = betDetails.reduce((sum, bet) => sum + parseInt(bet.amount), 0)
-      demoData.user.balance -= totalAmount
-      
-      return createResponse(newBet)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  // History & Results
-  const getBetHistory = async (params = {}) => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      let filteredBets = [...demoData.bets]
-      
-      if (params.gameType) {
-        filteredBets = filteredBets.filter(bet => bet.gameType === params.gameType)
-      }
-      
-      if (params.status) {
-        filteredBets = filteredBets.filter(bet => bet.status === params.status)
-      }
-      
-      // Simulate pagination
-      const page = params.page || 1
-      const size = params.size || 10
-      const startIndex = (page - 1) * size
-      const endIndex = startIndex + size
-      const paginatedBets = filteredBets.slice(startIndex, endIndex)
-      
-      const pageState = endIndex >= filteredBets.length ? 'noMore' : 'load'
-      
-      return createResponse(paginatedBets, 'data', null, pageState)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  const getTransactionHistory = async (params = {}) => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      let filteredTransactions = [...demoData.transactions]
-      
-      if (params.type) {
-        filteredTransactions = filteredTransactions.filter(tx => tx.type === params.type)
-      }
-      
-      if (params.status) {
-        filteredTransactions = filteredTransactions.filter(tx => tx.status === params.status)
-      }
-      
-      return createResponse(filteredTransactions)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  // Financial Operations
-  const balanceTransaction = async (transactionData) => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      const newTransaction = {
-        id: Date.now(),
-        ...transactionData,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      }
-      
-      demoData.transactions.unshift(newTransaction)
-      
-      return createResponse(newTransaction)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  const getPaymentMethods = async () => {
-    loading.value = true
-    
-    try {
-      await delay()
-      return createResponse(demoData.paymentMethods)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  // System & Configuration
-  const getCarouselImages = async () => {
-    loading.value = true
-    
-    try {
-      await delay()
-      return createResponse(demoData.carouselImages)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  const getServicePhone = async () => {
-    loading.value = true
-    
-    try {
-      await delay()
-      return createResponse(demoData.systemSettings.servicePhoneNo)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  // Soccer Betting APIs
-  const getSoccerGames = async (gameType = 'Body') => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      // Demo soccer games data
-      const soccerGames = [
-        {
-          id: 1,
-          homeTeam: 'Manchester United',
-          awayTeam: 'Liverpool',
-          league: 'Premier League',
-          matchDate: '2024-12-25T20:00:00Z',
-          homeOdds: '2.10',
-          drawOdds: '3.20',
-          awayOdds: '2.80',
-          status: 'upcoming',
-          gameType: gameType,
-          overUnderOptions: [
-            { id: 'over_2_5', label: 'Over 2.5', odds: '1.85', betUnder: '2.5' },
-            { id: 'under_2_5', label: 'Under 2.5', odds: '1.95', betUnder: '2.5' }
-          ]
-        },
-        {
-          id: 2,
-          homeTeam: 'Barcelona',
-          awayTeam: 'Real Madrid',
-          league: 'La Liga',
-          matchDate: '2024-12-26T22:00:00Z',
-          homeOdds: '1.95',
-          drawOdds: '3.40',
-          awayOdds: '3.10',
-          status: 'upcoming',
-          gameType: gameType,
-          overUnderOptions: [
-            { id: 'over_2_5_2', label: 'Over 2.5', odds: '1.75', betUnder: '2.5' },
-            { id: 'under_2_5_2', label: 'Under 2.5', odds: '2.05', betUnder: '2.5' }
-          ]
-        }
-      ]
-      
-      return createResponse(soccerGames)
-    } catch (err) {
-      return createResponse(null, 'error', 'severErr')
-    } finally {
-      loading.value = false
-    }
-  }
-  
-  const placeSoccerBet = async (betData) => {
-    loading.value = true
-    
-    try {
-      await delay()
-      
-      const { gameType, amount, soccerBetDetails } = betData
-      
-      // Calculate total amount
-      let totalAmount = 0
-      if (gameType === 'Maung' && amount) {
-        totalAmount = amount * soccerBetDetails.length
+      const response = await httpClient('/api/change-password', {
+        method: 'PUT',
+        body: JSON.stringify({ oldPassword, newPassword })
+      })
+
+      if (response.ok) {
+        return createResponse({ message: 'Password changed successfully' })
       } else {
-        totalAmount = soccerBetDetails.reduce((sum, bet) => sum + (bet.amount || 0), 0)
-      }
-      
-      // Check balance
-      if (demoData.user.balance < totalAmount) {
         return createResponse(null, 'error', 'userErr')
       }
-      
-      const newSoccerBet = {
-        id: Date.now(),
-        gameType,
-        amount: gameType === 'Maung' ? amount : undefined,
-        soccerBetDetails,
-        totalAmount,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        drawNumber: 'SB' + Date.now()
-      }
-      
-      // Add to demo data
-      if (!demoData.soccerBets) {
-        demoData.soccerBets = []
-      }
-      demoData.soccerBets.unshift(newSoccerBet)
-      
-      // Deduct balance
-      demoData.user.balance -= totalAmount
-      
-      return createResponse(newSoccerBet)
     } catch (err) {
       return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  
-  const getSoccerBetHistory = async (status = null) => {
+
+  // ==================== USER APIs ====================
+
+  // GET /api/me
+  const getUserProfile = async () => {
     loading.value = true
-    
+
     try {
-      await delay()
-      
-      // Initialize demo soccer bets if not exists
-      if (!demoData.soccerBets) {
-        demoData.soccerBets = [
-          {
-            id: 1,
-            gameType: 'Body',
-            status: 'won',
-            totalAmount: 5000,
-            winAmount: 12500,
-            createdAt: '2024-12-24T15:30:00Z',
-            soccerBetDetails: [
-              {
-                gameId: 1,
-                homeTeam: 'Manchester United',
-                awayTeam: 'Liverpool',
-                betType: '1x2',
-                betLabel: 'Home',
-                odds: '2.10',
-                amount: 2000,
-                betTeamId: 11
-              }
-            ]
-          },
-          {
-            id: 2,
-            gameType: 'Maung',
-            status: 'lost',
-            amount: 2000,
-            totalAmount: 4000,
-            winAmount: 0,
-            createdAt: '2024-12-23T18:00:00Z',
-            soccerBetDetails: [
-              {
-                gameId: 2,
-                homeTeam: 'Barcelona',
-                awayTeam: 'Real Madrid',
-                betType: '1x2',
-                betLabel: 'Away',
-                odds: '3.10',
-                betTeamId: 22
-              },
-              {
-                gameId: 1,
-                homeTeam: 'Manchester United',
-                awayTeam: 'Liverpool',
-                betType: '1x2',
-                betLabel: 'Draw',
-                odds: '3.20',
-                betTeamId: 13
-              }
-            ]
-          }
-        ]
+      const response = await httpClient('/api/me')
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'userErr')
       }
-      
-      let filteredBets = [...demoData.soccerBets]
-      
-      if (status) {
-        filteredBets = filteredBets.filter(bet => bet.status === status)
-      }
-      
-      return createResponse(filteredBets)
     } catch (err) {
       return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  // External API simulations (2D/3D Results)
-  const get2DLiveResults = async () => {
+
+  // PUT /api/user
+  const updateUser = async (userData) => {
     loading.value = true
-    
+
     try {
-      await delay()
-      return createResponse(demoData.results['2d'])
+      const response = await httpClient('/api/user', {
+        method: 'PUT',
+        body: JSON.stringify(userData)
+      })
+
+      if (response.ok) {
+        return createResponse({ message: 'User updated successfully' })
+      } else {
+        return createResponse(null, 'error', 'userErr')
+      }
     } catch (err) {
-      return createResponse(null, 'error', 'noConnectionErr')
+      return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  
-  const get3DResults = async () => {
+
+  // ==================== BETTING APIs ====================
+
+  // POST /api/bet
+  const placeBet = async (gameType, betDetails) => {
     loading.value = true
-    
+
     try {
-      await delay()
-      return createResponse(demoData.results['3d'])
+      const response = await httpClient('/api/bet', {
+        method: 'POST',
+        body: JSON.stringify({ gameType, betDetails })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        return createResponse(null, 'error', errData.message || 'betErr')
+      }
     } catch (err) {
-      return createResponse(null, 'error', 'noConnectionErr')
+      return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  
-  const get2DResultHistory = async () => {
+
+  // GET /api/bet-amount?gameType={gameType}
+  const getBetAmountByDigit = async (gameType) => {
     loading.value = true
-    
+
     try {
-      await delay()
-      return createResponse([...demoData.results['2d']].reverse())
+      const response = await httpClient(`/api/bet-amount?gameType=${gameType}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
     } catch (err) {
-      return createResponse(null, 'error', 'noConnectionErr')
+      return createResponse(null, 'error', 'severErr')
     } finally {
       loading.value = false
     }
   }
-  
-  // Utility functions
+
+  // GET /api/all-bets
+  const getBetHistory = async (params = {}) => {
+    loading.value = true
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.fromDate) queryParams.append('fromDate', params.fromDate)
+      if (params.toDate) queryParams.append('toDate', params.toDate)
+      if (params.username) queryParams.append('username', params.username)
+      if (params.token) queryParams.append('token', params.token)
+      if (params.gameType) queryParams.append('gameType', params.gameType)
+      if (params.status) queryParams.append('status', params.status)
+      if (params.page !== undefined) queryParams.append('page', params.page.toString())
+      if (params.size !== undefined) queryParams.append('size', params.size.toString())
+      if (params.sort) queryParams.append('sort', params.sort)
+
+      const url = `/api/all-bets?${queryParams.toString()}`
+      console.log('Fetching bet history:', url)
+      
+      const response = await httpClient(url)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Bet history response:', data)
+        
+        // Handle paginated response structure
+        const betList = data.list || data || []
+        const pageState = data.totalPages && data.page >= data.totalPages - 1 ? 'noMore' : 'load'
+        return createResponse(betList, 'data', null, pageState)
+      } else {
+        console.error('Bet history error:', response.status)
+        return createResponse([], 'error', 'fetchErr')
+      }
+    } catch (err) {
+      console.error('Bet history exception:', err)
+      return createResponse([], 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== BALANCE TRANSACTION APIs ====================
+
+  // POST /api/balance-transaction
+  const balanceTransaction = async (transactionData) => {
+    loading.value = true
+
+    try {
+      const payload = {
+        type: transactionData.type === 'deposit' ? 'In' : 'Out',
+        paymentMethodId: transactionData.paymentMethodId
+      }
+
+      if (transactionData.type === 'deposit') {
+        payload.transactionId = transactionData.transactionId
+      } else {
+        payload.outBalance = transactionData.amount
+        payload.phoneNo = transactionData.phoneNo
+      }
+
+      const response = await httpClient('/api/balance-transaction', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'transactionErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/balance-transaction
+  const getTransactionHistory = async (params = {}) => {
+    loading.value = true
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.type) queryParams.append('type', params.type === 'deposit' ? 'In' : 'Out')
+      if (params.paymentMethodId) queryParams.append('paymentMethodId', params.paymentMethodId)
+      if (params.status) queryParams.append('status', params.status)
+      if (params.username) queryParams.append('username', params.username)
+      if (params.fromDate) queryParams.append('fromDate', params.fromDate)
+      if (params.toDate) queryParams.append('toDate', params.toDate)
+      if (params.page !== undefined) queryParams.append('page', params.page)
+      if (params.size !== undefined) queryParams.append('size', params.size)
+
+      const response = await httpClient(`/api/balance-transaction?${queryParams.toString()}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API response to match frontend format
+        const transactions = (data.list || []).map(tx => ({
+          id: tx.id,
+          type: tx.type === 'In' ? 'deposit' : 'withdrawal',
+          amount: tx.type === 'In' ? tx.balance : tx.outBalance,
+          status: tx.status === 'Confirm' ? 'completed' : tx.status === 'Reject' ? 'failed' : 'pending',
+          paymentMethod: tx.paymentMethodName,
+          paymentMethodId: tx.paymentMethodId,
+          transactionId: tx.transactionId,
+          phoneNo: tx.phoneNo,
+          createdAt: new Date(tx.createdDateInMilliSeconds).toISOString()
+        }))
+        const pageState = data.page >= data.totalPages - 1 ? 'noMore' : 'load'
+        return createResponse(transactions, 'data', null, pageState)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== PAYMENT METHOD APIs ====================
+
+  // GET /api/payment-method
+  const getPaymentMethods = async () => {
+    loading.value = true
+    const baseUrl = getApiBaseUrl()
+
+    try {
+      // Try with token if available
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+      
+      const response = await fetch(`${baseUrl}/api/payment-method`, { headers })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Transform to frontend format
+        const methods = (Array.isArray(data) ? data : []).map(m => ({
+          id: m.id,
+          name: m.name,
+          imageLink: m.imageLink,
+          description: m.description,
+          phoneNoList: m.phoneNoList || [],
+          isActive: m.status === 'ACTIVE',
+          type: 'mobile_banking'
+        }))
+        return createResponse(methods)
+      } else {
+        return createResponse([], 'data') // Return empty array
+      }
+    } catch (err) {
+      return createResponse([], 'data')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== SLIDER/CAROUSEL APIs ====================
+
+  // GET /api/all-slider-images (no auth required for public display)
+  const getCarouselImages = async () => {
+    loading.value = true
+    const baseUrl = getApiBaseUrl()
+
+    try {
+      // Try with token first if available, fallback to no auth
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+      
+      const response = await fetch(`${baseUrl}/api/all-slider-images`, { headers })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Raw slider API response:', data)
+        
+        // Handle both array response and potential wrapper object
+        const imageArray = Array.isArray(data) ? data : (data.list || data.data || [])
+        
+        const images = imageArray
+          .filter(img => img.status === 'ACTIVE')
+          .sort((a, b) => (a.sortNo || 0) - (b.sortNo || 0))
+          .map(img => ({
+            id: img.id,
+            imageUrl: img.link, // API field is 'link'
+            link: img.link,
+            isActive: img.status === 'ACTIVE',
+            sortNo: img.sortNo
+          }))
+        
+        console.log('Processed slider images:', images)
+        return createResponse(images)
+      } else {
+        console.error('Slider API error:', response.status)
+        return createResponse([], 'data') // Return empty array instead of error
+      }
+    } catch (err) {
+      console.error('Slider API exception:', err)
+      return createResponse([], 'data') // Return empty array instead of error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== GAME APIs ====================
+
+  // GET /api/game/{type}
+  const getGameByType = async (type) => {
+    loading.value = true
+
+    try {
+      const response = await httpClient(`/api/game/${type}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/game
+  const getAllGames = async () => {
+    loading.value = true
+
+    try {
+      const response = await httpClient('/api/game')
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/game-setting
+  const getGameSettings = async () => {
+    loading.value = true
+    const baseUrl = getApiBaseUrl()
+
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+      
+      const response = await fetch(`${baseUrl}/api/game-setting`, { headers })
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        // Return default settings if API fails
+        return createResponse([
+          { name: '2D', value: 85 },
+          { name: '3D', value: 500 }
+        ])
+      }
+    } catch (err) {
+      return createResponse([
+        { name: '2D', value: 85 },
+        { name: '3D', value: 500 }
+      ])
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== ANNOUNCEMENT APIs ====================
+
+  // GET /api/all-announcements
+  const getAnnouncements = async (params = {}) => {
+    loading.value = true
+    const baseUrl = getApiBaseUrl()
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.fromDate) queryParams.append('fromDate', params.fromDate)
+      if (params.toDate) queryParams.append('toDate', params.toDate)
+      if (params.status) queryParams.append('status', params.status)
+      if (params.page !== undefined) queryParams.append('page', params.page)
+      if (params.size !== undefined) queryParams.append('size', params.size)
+
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+      
+      const response = await fetch(`${baseUrl}/api/all-announcements?${queryParams.toString()}`, { headers })
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data.list || data || [])
+      } else {
+        return createResponse([], 'data') // Return empty array
+      }
+    } catch (err) {
+      return createResponse([], 'data')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== SOCCER BETTING APIs ====================
+
+  // GET /api/available-soccer-game?type={type}
+  const getSoccerGames = async (gameType = 'Body') => {
+    loading.value = true
+
+    try {
+      const response = await httpClient(`/api/available-soccer-game?type=${gameType}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/soccer-games
+  const getAllSoccerGames = async (params = {}) => {
+    loading.value = true
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.fromDate) queryParams.append('fromDate', params.fromDate)
+      if (params.toDate) queryParams.append('toDate', params.toDate)
+      if (params.token) queryParams.append('token', params.token)
+      if (params.type) queryParams.append('type', params.type)
+      if (params.status) queryParams.append('status', params.status)
+      if (params.page !== undefined) queryParams.append('page', params.page)
+      if (params.size !== undefined) queryParams.append('size', params.size)
+
+      const response = await httpClient(`/api/soccer-games?${queryParams.toString()}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data.list || data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // POST /api/soccer-bet
+  const placeSoccerBet = async (betData) => {
+    loading.value = true
+
+    try {
+      const response = await httpClient('/api/soccer-bet', {
+        method: 'POST',
+        body: JSON.stringify(betData)
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        return createResponse(null, 'error', errData.message || 'betErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/soccer-bets
+  const getSoccerBetHistory = async (params = {}) => {
+    loading.value = true
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.fromDate) queryParams.append('fromDate', params.fromDate)
+      if (params.toDate) queryParams.append('toDate', params.toDate)
+      if (params.token) queryParams.append('token', params.token)
+      if (params.username) queryParams.append('username', params.username)
+      if (params.soccerType) queryParams.append('soccerType', params.soccerType)
+      if (params.status) queryParams.append('status', params.status)
+
+      const url = `/api/soccer-bets?${queryParams.toString()}`
+      console.log('Fetching soccer bet history:', url)
+      
+      const response = await httpClient(url)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Soccer bet history response:', data)
+        
+        // Handle both array and paginated response
+        const betList = data.list || data || []
+        return createResponse(betList)
+      } else {
+        console.error('Soccer bet history error:', response.status)
+        return createResponse([], 'error', 'fetchErr')
+      }
+    } catch (err) {
+      console.error('Soccer bet history exception:', err)
+      return createResponse([], 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/soccer-bet/{id}
+  const getSoccerBetDetail = async (betId) => {
+    loading.value = true
+
+    try {
+      const response = await httpClient(`/api/soccer-bet/${betId}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== SYSTEM SETTINGS APIs ====================
+
+  // GET /api/system-setting/{name}
+  const getSystemSettingByName = async (name) => {
+    loading.value = true
+    const baseUrl = getApiBaseUrl()
+
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+      
+      const response = await fetch(`${baseUrl}/api/system-setting/${name}`, { headers })
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET /api/system-setting/Service_PhoneNo
+  const getServicePhone = async () => {
+    try {
+      const response = await getSystemSettingByName('Service_PhoneNo')
+      if (response.msgState === 'data') {
+        return createResponse(response.data.value)
+      }
+      return response
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    }
+  }
+
+  // ==================== BALANCE HISTORY APIs ====================
+
+  // GET /api/histories
+  const getBalanceHistories = async (params = {}) => {
+    loading.value = true
+
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.page !== undefined) queryParams.append('page', params.page)
+      if (params.size !== undefined) queryParams.append('size', params.size)
+
+      const response = await httpClient(`/api/histories?${queryParams.toString()}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        return createResponse(data.list || data)
+      } else {
+        return createResponse(null, 'error', 'fetchErr')
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== TRANSACTION BLOCK APIs ====================
+
+  // GET /api/transaction-block/me
+  const checkTransactionBlocked = async () => {
+    loading.value = true
+
+    try {
+      const response = await httpClient('/api/transaction-block/me')
+
+      if (response.ok) {
+        const text = await response.text()
+        if (!text) {
+          return createResponse({ blocked: false })
+        }
+        const data = JSON.parse(text)
+        return createResponse({ blocked: true, ...data })
+      } else {
+        return createResponse({ blocked: false })
+      }
+    } catch (err) {
+      return createResponse(null, 'error', 'severErr')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== UTILITY FUNCTIONS ====================
+
   const isAuthenticated = () => {
+    if (typeof localStorage === 'undefined') return false
     return !!localStorage.getItem('token')
   }
-  
+
   const getToken = () => {
+    if (typeof localStorage === 'undefined') return null
     return localStorage.getItem('token')
   }
-  
+
   const logout = () => {
+    if (typeof localStorage === 'undefined') return
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
   }
-  
+
+  // ==================== EXTERNAL RESULTS APIs (2DBoss) ====================
+  // External APIs for live lottery results
+
+  // GET https://luke.2dboss.com/api/luke/twod-result-live
+  const get2DLiveResults = async () => {
+    loading.value = true
+
+    try {
+      const response = await fetch('https://luke.2dboss.com/api/luke/twod-result-live')
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('2D Live API response:', data)
+        
+        // API returns: { data: [...], result: 1, message: "success" }
+        // Each item has: date, live, result_1100, result_1200, result_300, result_430,
+        // set_1100, val_1100, set_1200, val_1200, set_300, val_300, set_430, val_430,
+        // internet_930, modern_930, internet_200, modern_200
+        
+        const resultArray = data?.data || (Array.isArray(data) ? data : [])
+        
+        // Return raw data for processing in useResults
+        return createResponse(resultArray)
+      } else {
+        console.error('2D Live API error:', response.status)
+        return createResponse([], 'data')
+      }
+    } catch (err) {
+      console.error('2D Live API exception:', err)
+      return createResponse([], 'data')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET https://api.2dboss.com/api/lv/threed-result
+  const get3DResults = async () => {
+    loading.value = true
+
+    try {
+      const response = await fetch('https://api.2dboss.com/api/lv/threed-result')
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('3D API response:', data)
+        
+        // Return raw data for processing in useResults
+        const resultArray = data?.data || (Array.isArray(data) ? data : [])
+        return createResponse(resultArray)
+      } else {
+        console.error('3D API error:', response.status)
+        return createResponse([], 'data')
+      }
+    } catch (err) {
+      console.error('3D API exception:', err)
+      return createResponse([], 'data')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // GET https://api.2dboss.com/api/v2/v1/bkk/twod-result
+  const get2DResultHistory = async () => {
+    loading.value = true
+
+    try {
+      const response = await fetch('https://api.2dboss.com/api/v2/v1/bkk/twod-result')
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('2D History API response:', data)
+        
+        // Return raw data for processing in useResults
+        const resultArray = data?.data || (Array.isArray(data) ? data : [])
+        return createResponse(resultArray)
+      } else {
+        console.error('2D History API error:', response.status)
+        return createResponse([], 'data')
+      }
+    } catch (err) {
+      console.error('2D History API exception:', err)
+      return createResponse([], 'data')
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     error,
-    
+
     // Auth
     login,
     signup,
     refreshToken,
     changePassword,
-    
+
     // User
     getUserProfile,
-    
+    updateUser,
+
     // Betting
     placeBet,
-    
-    // History
+    getBetAmountByDigit,
     getBetHistory,
-    getTransactionHistory,
-    
-    // Financial
+
+    // Balance Transactions
     balanceTransaction,
+    getTransactionHistory,
+
+    // Payment Methods
     getPaymentMethods,
-    
-    // System
+
+    // Carousel/Slider
     getCarouselImages,
-    getServicePhone,
-    
+
+    // Games
+    getGameByType,
+    getAllGames,
+    getGameSettings,
+
+    // Announcements
+    getAnnouncements,
+
     // Soccer Betting
     getSoccerGames,
+    getAllSoccerGames,
     placeSoccerBet,
     getSoccerBetHistory,
-    
-    // External Results
+    getSoccerBetDetail,
+
+    // System Settings
+    getSystemSettingByName,
+    getServicePhone,
+
+    // Balance History
+    getBalanceHistories,
+
+    // Transaction Block
+    checkTransactionBlocked,
+
+    // Results
     get2DLiveResults,
     get3DResults,
     get2DResultHistory,
-    
+
     // Utilities
     isAuthenticated,
     getToken,
-    logout,
-    
-    // Demo data access
-    demoData
+    logout
   }
 }

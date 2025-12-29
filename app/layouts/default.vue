@@ -35,7 +35,7 @@ const navItems = [
 <template>
   <div class="min-h-screen flex items-center justify-center bg-black">
     <div class="w-full min-h-screen max-w-[430px] relative mx-auto bg-cover bg-center bg-fixed" 
-         style="background-image: url('/images/bg-14.jpeg');">
+         style="background-image: url('/images/bg-10.jpeg');">
       <!-- Overlay -->
       <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/90"></div>
       
