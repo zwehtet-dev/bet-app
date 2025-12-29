@@ -87,7 +87,9 @@
           <div v-else class="space-y-2">
             <div class="flex justify-between items-center"><span class="text-[10px] text-white/40">12:00</span><span class="text-lg font-black text-blue-400">{{ results.morning2D || '--' }}</span></div>
             <div class="flex justify-between items-center"><span class="text-[10px] text-white/40">16:30</span><span class="text-lg font-black text-blue-400">{{ results.evening2D || '--' }}</span></div>
-            <div v-if="results.live2D && results.live2D !== '--'" class="flex justify-between items-center pt-1 border-t border-white/10"><span class="text-[10px] text-green-400">LIVE</span><span class="text-lg font-black text-green-400 animate-pulse">{{ results.live2D }}</span></div>
+            <!-- Live 2D: Show only Mon-Fri 10AM-10PM Myanmar time -->
+            <div v-if="isLive2DOpen && results.live2D && results.live2D !== '--'" class="flex justify-between items-center pt-1 border-t border-white/10"><span class="text-[10px] text-green-400">LIVE</span><span class="text-lg font-black text-green-400 animate-pulse">{{ results.live2D }}</span></div>
+            <div v-else-if="!isLive2DOpen" class="flex justify-between items-center pt-1 border-t border-white/10"><span class="text-[10px] text-red-400">LIVE</span><span class="text-xs font-medium text-red-400/80">Temporarily Closed</span></div>
           </div>
         </div>
         <!-- 3D Results Card -->
@@ -209,6 +211,25 @@ const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const onTouchStart = (e) => { touchStart.value = e.touches[0].clientX }
 const onTouchEnd = (e) => { const diff = touchStart.value - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) currentSlide.value = (currentSlide.value + (diff > 0 ? 1 : -1) + slides.value.length) % slides.value.length }
 
+// Check if live 2D should be shown (Mon-Fri, 10 AM - 10 PM Myanmar time)
+const isLive2DOpen = ref(false)
+const checkLive2DAvailability = () => {
+  // Myanmar timezone is UTC+6:30
+  const now = new Date()
+  const myanmarOffset = 6.5 * 60 // 6 hours 30 minutes in minutes
+  const utcOffset = now.getTimezoneOffset() // in minutes (negative for ahead of UTC)
+  const myanmarTime = new Date(now.getTime() + (myanmarOffset + utcOffset) * 60 * 1000)
+  
+  const day = myanmarTime.getDay() // 0 = Sunday, 6 = Saturday
+  const hour = myanmarTime.getHours()
+  
+  // Mon-Fri (1-5) and 10 AM (10) to 10 PM (22)
+  const isWeekday = day >= 1 && day <= 5
+  const isOpenHours = hour >= 10 && hour < 22
+  
+  isLive2DOpen.value = isWeekday && isOpenHours
+}
+
 const handleLogin = async () => { loginError.value = ''; const res = await login(loginForm.value.phone, loginForm.value.password); if (res.success) { showLogin.value = false; loginForm.value = { phone: '', password: '' } } else { loginError.value = res.error || 'Login failed' } }
 const handleSignup = async () => { signupError.value = ''; const res = await signup(signupForm.value.name, signupForm.value.email, signupForm.value.password, signupForm.value.phone); if (res.success) { showSignup.value = false; signupForm.value = { name: '', phone: '', email: '', password: '' } } else { signupError.value = res.error || 'Signup failed' } }
 
@@ -254,8 +275,13 @@ watch([results3D], () => {
 
 let slideTimer
 let liveRefreshTimer
+let availabilityTimer
 
 onMounted(async () => {
+  // Check live 2D availability immediately and every minute
+  checkLive2DAvailability()
+  availabilityTimer = setInterval(checkLive2DAvailability, 60000)
+  
   // Initialize auth first
   await initAuth()
   balanceLoading.value = false
@@ -307,6 +333,7 @@ onMounted(async () => {
 onUnmounted(() => {
   clearInterval(slideTimer)
   clearInterval(liveRefreshTimer)
+  clearInterval(availabilityTimer)
 })
 </script>
 

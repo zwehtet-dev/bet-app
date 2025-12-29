@@ -3,8 +3,15 @@
     <div class="px-4 py-3">
       <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-500/20">
         <div class="flex items-center justify-between">
-          <div><p class="text-[10px] text-white/50">{{ t('nextDraw') }}</p><p class="text-sm font-bold">{{ t('eveningSession') }}</p><p class="text-[10px] text-white/40">6:30 PM</p></div>
-          <div class="bg-purple-500/20 px-4 py-2 rounded-xl"><p class="text-2xl font-black text-purple-400 font-mono">{{ timer }}</p></div>
+          <div>
+            <p class="text-[10px] text-white/50">{{ t('nextDraw') }}</p>
+            <p class="text-sm font-bold">{{ nextDrawDate }}</p>
+            <p class="text-[10px] text-white/40" v-if="isDrawDay">6:30 PM</p>
+          </div>
+          <div class="bg-purple-500/20 px-4 py-2 rounded-xl">
+            <p class="text-2xl font-black text-purple-400 font-mono" v-if="isDrawDay">{{ timer }}</p>
+            <p class="text-lg font-black text-purple-400" v-else>{{ daysLeft }} {{ daysLeft === 1 ? 'day' : 'days' }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -19,7 +26,7 @@
     <div v-if="mode === 'manual'" class="px-4 py-3">
       <div class="bg-white/5 rounded-xl p-5 border border-white/5">
         <div class="flex justify-center gap-3 mb-4">
-          <input v-for="i in 3" :key="i" v-model="digits[i-1]" @input="onDigit($event, i-1)" maxlength="1" class="w-14 h-14 bg-white/10 rounded-xl text-2xl font-black text-center border-2 border-white/20 focus:border-purple-400 focus:outline-none">
+          <input v-for="i in 3" :key="i" :ref="el => digitInputs[i-1] = el" v-model="digits[i-1]" @input="onDigit($event, i-1)" @keydown="onKeydown($event, i-1)" maxlength="1" class="w-14 h-14 bg-white/10 rounded-xl text-2xl font-black text-center border-2 border-white/20 focus:border-purple-400 focus:outline-none">
         </div>
         <div class="text-center"><p class="text-xs text-white/40 mb-1">{{ t('your3DNumber') }}</p><p class="text-4xl font-black text-purple-400">{{ currentNum }}</p></div>
         <div v-if="isValid && perms.length" class="mt-4 pt-4 border-t border-white/10">
@@ -72,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
 import { useBetting } from '~/composables/useBetting'
@@ -83,12 +90,16 @@ const { placeBet, loadGameSettings, gameSettings } = useBetting()
 
 const mode = ref('manual')
 const digits = ref(['', '', ''])
+const digitInputs = ref([])
 const selected = ref([])
 const amount = ref(1000)
-const timer = ref('06:30:45')
+const timer = ref('06:30:00')
 const loading = ref(false)
 const toast = ref(null)
 const multiplier = ref(500)
+const nextDrawDate = ref('')
+const daysLeft = ref(0)
+const isDrawDay = ref(false)
 
 const ranges = Array.from({ length: 10 }, (_, i) => ({ label: `${i}00-${i}99`, nums: Array.from({ length: 100 }, (_, j) => i * 100 + j) }))
 
@@ -113,10 +124,89 @@ const perms = computed(() => {
 })
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
-const onDigit = (e, i) => { if (!/^[0-9]$/.test(e.target.value) && e.target.value !== '') { e.target.value = ''; digits.value[i] = '' } }
+
+const calculateNextDraw = () => {
+  const now = new Date()
+  const currentDate = now.getDate()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  
+  let nextDrawDay
+  let nextDrawMonth = currentMonth
+  let nextDrawYear = currentYear
+  
+  // Determine next draw date (1st or 16th)
+  if (currentDate < 1) {
+    nextDrawDay = 1
+  } else if (currentDate < 16) {
+    nextDrawDay = 16
+  } else {
+    nextDrawDay = 1
+    nextDrawMonth = currentMonth + 1
+    if (nextDrawMonth > 11) {
+      nextDrawMonth = 0
+      nextDrawYear = currentYear + 1
+    }
+  }
+  
+  const nextDraw = new Date(nextDrawYear, nextDrawMonth, nextDrawDay, 18, 30, 0) // 6:30 PM
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const drawDate = new Date(nextDrawYear, nextDrawMonth, nextDrawDay)
+  
+  // Check if today is a draw day
+  isDrawDay.value = (currentDate === 1 || currentDate === 16)
+  
+  // Calculate days left
+  const timeDiff = drawDate.getTime() - today.getTime()
+  daysLeft.value = Math.ceil(timeDiff / (1000 * 3600 * 24))
+  
+  // Format next draw date
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  nextDrawDate.value = `${nextDrawDay} ${months[nextDrawMonth]} ${nextDrawYear}`
+  
+  return nextDraw
+}
+
+const updateTimer = () => {
+  if (!isDrawDay.value) return
+  
+  const now = new Date()
+  const drawTime = new Date()
+  drawTime.setHours(18, 30, 0, 0) // 6:30 PM today
+  
+  if (now > drawTime) {
+    // If past draw time, show next draw
+    calculateNextDraw()
+    return
+  }
+  
+  const timeDiff = drawTime.getTime() - now.getTime()
+  const hours = Math.floor(timeDiff / (1000 * 60 * 60))
+  const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000)
+  
+  timer.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+const onDigit = (e, i) => { 
+  if (!/^[0-9]$/.test(e.target.value) && e.target.value !== '') { 
+    e.target.value = ''; digits.value[i] = '' 
+  } else if (e.target.value !== '' && i < 2) {
+    nextTick(() => digitInputs.value[i + 1]?.focus())
+  }
+}
+const onKeydown = (e, i) => {
+  if (e.key === 'Backspace' && digits.value[i] === '' && i > 0) {
+    nextTick(() => digitInputs.value[i - 1]?.focus())
+  }
+}
 const toggleGrid = (n) => { const i = selected.value.indexOf(n); i > -1 ? selected.value.splice(i, 1) : selected.value.push(n) }
 const quickPick = (c) => { selected.value = []; while (selected.value.length < c) { const n = Math.floor(Math.random() * 1000); if (!selected.value.includes(n)) selected.value.push(n) } }
-const addPerms = () => { perms.value.forEach(p => { if (!selected.value.includes(p)) selected.value.push(p) }); mode.value = 'grid' }
+const addPerms = () => { 
+  const original = parseInt(currentNum.value)
+  if (!selected.value.includes(original)) selected.value.push(original)
+  perms.value.forEach(p => { if (!selected.value.includes(p)) selected.value.push(p) })
+  mode.value = 'grid' 
+}
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
 const placeBetHandler = async () => {
@@ -154,11 +244,16 @@ onMounted(async () => {
   await loadGameSettings()
   if (gameSettings.value['3D']) multiplier.value = gameSettings.value['3D']
   
+  // Initialize next draw calculation
+  calculateNextDraw()
+  
   timerInterval = setInterval(() => {
-    const [h, m, s] = timer.value.split(':').map(Number)
-    let t = h * 3600 + m * 60 + s - 1
-    if (t < 0) t = 18.5 * 3600 - 1
-    timer.value = `${Math.floor(t/3600).toString().padStart(2,'0')}:${Math.floor((t%3600)/60).toString().padStart(2,'0')}:${(t%60).toString().padStart(2,'0')}`
+    if (isDrawDay.value) {
+      updateTimer()
+    } else {
+      // Recalculate in case date changed
+      calculateNextDraw()
+    }
   }, 1000)
 })
 onUnmounted(() => clearInterval(timerInterval))
