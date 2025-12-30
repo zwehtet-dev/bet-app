@@ -1,5 +1,67 @@
 <template>
   <div class="text-white">
+    <!-- Loading Skeleton State -->
+    <div v-if="!pageReady" class="animate-pulse">
+      <!-- Profile Card Skeleton -->
+      <div class="px-4 py-4">
+        <div class="relative bg-white/5 rounded-2xl p-6 text-center border border-white/5">
+          <div class="w-20 h-20 bg-white/10 rounded-full mx-auto mb-3"></div>
+          <div class="h-5 bg-white/10 rounded w-32 mx-auto mb-2"></div>
+          <div class="h-4 bg-white/10 rounded w-28 mx-auto mb-4"></div>
+          <div class="inline-block bg-white/10 rounded-xl px-6 py-3">
+            <div class="h-3 bg-white/10 rounded w-16 mx-auto mb-1"></div>
+            <div class="h-6 bg-white/10 rounded w-24 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Language Settings Skeleton -->
+      <div class="px-4 py-3">
+        <div class="h-4 bg-white/10 rounded w-32 mb-3"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="h-12 bg-white/5 rounded-xl border border-white/5"></div>
+          <div class="h-12 bg-white/5 rounded-xl border border-white/5"></div>
+        </div>
+      </div>
+      <!-- Settings Skeleton -->
+      <div class="px-4 py-3">
+        <div class="h-4 bg-white/10 rounded w-20 mb-3"></div>
+        <div class="space-y-2">
+          <div class="bg-white/5 rounded-xl p-4 flex items-center gap-3 border border-white/5">
+            <div class="w-10 h-10 bg-white/10 rounded-xl"></div>
+            <div class="flex-1">
+              <div class="h-4 bg-white/10 rounded w-28 mb-1"></div>
+              <div class="h-3 bg-white/10 rounded w-36"></div>
+            </div>
+          </div>
+          <div class="bg-white/5 rounded-xl p-4 flex items-center gap-3 border border-white/5">
+            <div class="w-10 h-10 bg-white/10 rounded-xl"></div>
+            <div class="flex-1">
+              <div class="h-4 bg-white/10 rounded w-20 mb-1"></div>
+              <div class="h-3 bg-white/10 rounded w-28"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Customer Service Skeleton -->
+      <div class="px-4 py-3">
+        <div class="h-4 bg-white/10 rounded w-36 mb-3"></div>
+        <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+          <div class="h-3 bg-white/10 rounded w-32 mb-3"></div>
+          <div class="space-y-2">
+            <div class="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+              <div class="w-8 h-8 bg-white/10 rounded-lg"></div>
+              <div class="h-4 bg-white/10 rounded w-28"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Logout Button Skeleton -->
+      <div class="px-4 py-4">
+        <div class="h-12 bg-white/5 rounded-xl border border-white/5"></div>
+      </div>
+    </div>
+
+    <template v-else>
     <div class="px-4 py-4">
       <div class="relative bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-transparent rounded-2xl p-6 text-center border border-white/10 overflow-hidden">
         <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
@@ -54,6 +116,7 @@
     <div class="px-4 py-4">
       <button @click="handleLogout" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3.5 rounded-xl text-sm font-bold border border-red-500/20 active:scale-[0.98]">{{ t('signOut') }}</button>
     </div>
+    </template>
 
     <Teleport to="body">
       <Transition name="fade">
@@ -84,18 +147,12 @@ import { useLanguage } from '~/composables/useLanguage'
 import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
 
-// Lazy load - define page meta
 definePageMeta({
   keepalive: true
 })
 
 const { t, setLanguage, currentLanguage } = useLanguage()
-const { userBalance, logout, userName, userPhone, changePassword: apiChangePassword, isLoggedIn } = useAuth()
-
-// Redirect if not logged in
-if (!isLoggedIn.value) {
-  await navigateTo('/login')
-}
+const { userBalance, logout, userName, userPhone, changePassword: apiChangePassword, isLoggedIn, initAuth } = useAuth()
 const api = useApi()
 
 const showPwModal = ref(false)
@@ -103,6 +160,7 @@ const loading = ref(false)
 const toast = ref(null)
 const pwForm = ref({ old: '', new: '' })
 const servicePhones = ref([])
+const pageReady = ref(false)
 
 const initials = computed(() => (userName.value || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2))
 const canChangePw = computed(() => pwForm.value.old.length >= 6 && pwForm.value.new.length >= 6)
@@ -121,7 +179,10 @@ const changePw = async () => {
   loading.value = false
 }
 
-const handleLogout = () => { logout(); showToast('Logged out!', 'success') }
+const handleLogout = () => { 
+  logout()
+  navigateTo('/login')
+}
 
 const loadServicePhone = async () => {
   const result = await api.getServicePhone()
@@ -130,7 +191,19 @@ const loadServicePhone = async () => {
   }
 }
 
-onMounted(() => loadServicePhone())
+onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
+  // Check if logged in after auth is initialized
+  if (!isLoggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  
+  pageReady.value = true
+  await loadServicePhone()
+})
 </script>
 
 <style>

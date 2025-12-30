@@ -33,14 +33,14 @@ const navItems = [
 </script>
 
 <template>
-  <div class="min-h-screen min-h-[100dvh] flex items-center justify-center bg-black">
+  <div class="min-h-screen min-h-[100dvh] flex items-center justify-center">
     <div class="w-full min-h-screen min-h-[100dvh] max-w-[430px] relative mx-auto flex flex-col bg-cover bg-center bg-fixed" 
          style="background-image: url('/images/bg-10.jpeg');">
       <!-- Overlay -->
       <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/90 pointer-events-none"></div>
       
       <!-- Header -->
-      <header class="sticky top-0 z-30 bg-black/60 backdrop-blur-xl border-b border-white/5 flex-shrink-0" style="contain: layout style;">
+      <header class="sticky top-0 z-30 bg-black/60 backdrop-blur-xl border-b border-white/5 flex-shrink-0 pt-2" style="contain: layout style;">
         <div class="px-4 py-3 flex items-center justify-between safe-area-top">
           <div class="flex items-center gap-3">
             <NuxtLink v-if="!isMainPage" to="/" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors active:scale-95 touch-manipulation">
@@ -53,27 +53,38 @@ const navItems = [
             </div>
             <div>
               <h1 class="text-[15px] font-bold text-white">{{ t(currentPage.title) }}</h1>
-              <p v-if="isLoggedIn && userName && isMainPage" class="text-[10px] text-white/40">Welcome back!</p>
-              <p v-else-if="!isLoggedIn && isMainPage" class="text-[10px] text-white/40">Please sign in</p>
+              <ClientOnly>
+                <p v-if="isLoggedIn && userName && isMainPage" class="text-[10px] text-white/40">Welcome back!</p>
+                <p v-else-if="!isLoggedIn && isMainPage" class="text-[10px] text-white/40">Please sign in</p>
+                <template #fallback>
+                  <p v-if="isMainPage" class="text-[10px] text-white/40">&nbsp;</p>
+                </template>
+              </ClientOnly>
             </div>
           </div>
-          <div v-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
-            <p class="text-[9px] text-white/40 font-medium">BALANCE</p>
-            <p class="text-sm font-black text-amber-400">{{ formatBalance(userBalance) }}</p>
-          </div>
-          <NuxtLink v-else to="/login" class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl px-4 py-2 border border-amber-500/20 text-sm font-bold text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-transform touch-manipulation">
-            Login
-          </NuxtLink>
+          <ClientOnly>
+            <div v-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
+              <p class="text-sm font-black text-amber-400">{{ formatBalance(userBalance) }} <span class="text-xs text-gray-400">MMK</span></p>
+            </div>
+            <NuxtLink v-else to="/login" class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl px-4 py-2 border border-amber-500/20 text-sm font-bold text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-transform touch-manipulation">
+              Login
+            </NuxtLink>
+            <template #fallback>
+              <div class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
+                <div class="h-5 w-16 bg-white/10 rounded animate-pulse"></div>
+              </div>
+            </template>
+          </ClientOnly>
         </div>
       </header>
       
-      <!-- Content - flex-1 to fill remaining space -->
+      <!-- Content -->
       <main class="relative z-10 flex-1 overflow-y-auto pb-[72px]" style="-webkit-overflow-scrolling: touch;">
         <slot />
       </main>
 
-      <!-- Bottom Nav - Absolute positioned within container -->
-      <nav class="absolute max-w-[430px] bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/5 z-40 mx-auto">
+      <!-- Bottom Nav -->
+      <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-black/90 backdrop-blur-xl border-t border-white/5 z-40">
         <div class="flex items-center justify-around py-2 safe-area-bottom">
           <NuxtLink v-for="item in navItems" :key="item.name" :to="item.path" 
                     class="flex flex-col items-center py-2 px-5 rounded-2xl transition-colors touch-manipulation min-h-[44px] min-w-[44px]"
@@ -99,34 +110,11 @@ const navItems = [
 </template>
 
 <style>
-/* Safe area handling for notched devices */
 .safe-area-top { padding-top: env(safe-area-inset-top, 0); }
 .safe-area-bottom { padding-bottom: max(env(safe-area-inset-bottom), 8px); }
-
-/* Touch optimization */
 .touch-manipulation { touch-action: manipulation; }
-
-/* Optimize backdrop blur for mobile */
-@supports (backdrop-filter: blur(12px)) {
-  .backdrop-blur-xl { backdrop-filter: blur(12px); }
-}
-@supports not (backdrop-filter: blur(12px)) {
-  .backdrop-blur-xl { background-color: rgba(0, 0, 0, 0.95); }
-}
-
-/* Reduce motion for users who prefer it */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Fix for iOS Safari 100vh issue */
-@supports (-webkit-touch-callout: none) {
-  .min-h-\[100dvh\] {
-    min-height: -webkit-fill-available;
-  }
-}
+@supports (backdrop-filter: blur(12px)) { .backdrop-blur-xl { backdrop-filter: blur(12px); } }
+@supports not (backdrop-filter: blur(12px)) { .backdrop-blur-xl { background-color: rgba(0, 0, 0, 0.95); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+@supports (-webkit-touch-callout: none) { .min-h-\[100dvh\] { min-height: -webkit-fill-available; } }
 </style>

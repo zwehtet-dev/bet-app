@@ -90,7 +90,7 @@ definePageMeta({
 })
 
 const { t } = useLanguage()
-const { userBalance, isLoggedIn, refreshProfile } = useAuth()
+const { userBalance, isLoggedIn, refreshProfile, initAuth } = useAuth()
 const { placeBet, loadGameSettings, gameSettings } = useBetting()
 
 const mode = ref('manual')
@@ -251,6 +251,9 @@ const placeBetHandler = async () => {
 
 let timerInterval
 onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
   await loadGameSettings()
   if (gameSettings.value['3D']) multiplier.value = gameSettings.value['3D']
   

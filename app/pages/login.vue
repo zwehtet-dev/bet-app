@@ -3,8 +3,8 @@
     <div class="w-full max-w-sm">
       <!-- Logo and Header -->
       <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-500/25">
-          <span class="text-2xl font-black text-white">2D</span>
+        <div class="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-6 shadow-2xl shadow-orange-500/25">
+          <img src="/images/logo.jpg" alt="2D3D Logo" class="w-full h-full object-cover">
         </div>
         <h1 class="text-3xl font-black text-white mb-2">Welcome Back!</h1>
         <p class="text-white/60">Sign in to continue betting</p>
@@ -18,7 +18,7 @@
         </div>
 
         <!-- Form Fields -->
-        <div class="space-y-4 mb-6">
+        <div class="space-y-4 mb-4">
           <div>
             <label class="block text-sm font-medium text-white/70 mb-2">Phone / Email</label>
             <input 
@@ -56,6 +56,23 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="flex items-center mb-6">
+          <label class="flex items-center cursor-pointer group">
+            <input 
+              v-model="rememberMe" 
+              type="checkbox" 
+              class="sr-only peer"
+            >
+            <div class="w-5 h-5 rounded-md border-2 border-white/20 bg-white/5 flex items-center justify-center transition-all peer-checked:bg-amber-500 peer-checked:border-amber-500 group-hover:border-white/40">
+              <svg class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span class="ml-2 text-sm text-white/60 group-hover:text-white/80 transition-colors">Remember me</span>
+          </label>
         </div>
 
         <!-- Login Button -->
@@ -111,10 +128,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
-import { useRouter } from 'vue-router'
+
+// Use auth layout
+definePageMeta({
+  layout: 'auth'
+})
 
 const { login, authLoading, isLoggedIn } = useAuth()
-const router = useRouter()
 
 // Redirect if already logged in
 if (isLoggedIn.value) {
@@ -128,6 +148,7 @@ const loginForm = ref({
 
 const loginError = ref('')
 const showPassword = ref(false)
+const rememberMe = ref(true)
 
 const handleLogin = async () => {
   if (!loginForm.value.phone || !loginForm.value.password) {
@@ -137,17 +158,15 @@ const handleLogin = async () => {
 
   loginError.value = ''
   
-  const result = await login(loginForm.value.phone, loginForm.value.password)
+  const result = await login(loginForm.value.phone, loginForm.value.password, rememberMe.value)
   
   if (result.success) {
-    // Redirect to home page on successful login
     await navigateTo('/')
   } else {
     loginError.value = result.error || 'Login failed. Please try again.'
   }
 }
 
-// Set page title
 useHead({
   title: 'Login - 2D3D Betting'
 })

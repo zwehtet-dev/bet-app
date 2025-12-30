@@ -16,19 +16,23 @@
  * - https://www.pwabuilder.com/imageGenerator
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ICON_SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
-const SOURCE_IMAGE = 'public/images/logo.jpg';
-const OUTPUT_DIR = 'public/icons';
+const SOURCE_IMAGE = path.join(__dirname, '../public/images/logo.jpg');
+const OUTPUT_DIR = path.join(__dirname, '../public/icons');
 
 async function generateIcons() {
   try {
     // Check if sharp is available
     let sharp;
     try {
-      sharp = require('sharp');
+      sharp = (await import('sharp')).default;
     } catch (e) {
       console.log('Sharp not installed. Install with: npm install sharp --save-dev');
       console.log('');

@@ -74,11 +74,23 @@ export const useResults = () => {
     if (!Array.isArray(rawData)) return processed
     
     rawData.forEach(item => {
-      const date = parseDate(item.date) || item.date
-      const number = item.threed || item.number || item.result
+      // Handle various date field names from API - API uses 'datetime' field
+      const rawDate = item.datetime || item.date || item.draw_date || item.result_date || item.created_at || ''
+      const date = parseDate(rawDate) || rawDate
+      const number = item.threed || item.result || item.number
+      
+      // Format display date - handle various formats
+      let displayDate = rawDate
+      if (rawDate) {
+        // If date is in YYYY-MM-DD format, convert to DD/MM/YYYY for display
+        if (rawDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const [year, month, day] = rawDate.split('-')
+          displayDate = `${day}/${month}/${year}`
+        }
+      }
       
       if (number) {
-        processed.push({ date, displayDate: item.date, number, session: item.session || 'Draw' })
+        processed.push({ date, displayDate, number, session: item.session || 'Draw' })
       }
     })
 
@@ -142,8 +154,10 @@ export const useResults = () => {
       
       if (response.msgState === 'data' && response.data) {
         const dataArray = Array.isArray(response.data) ? response.data : []
+        console.log('3D raw data sample:', dataArray.length > 0 ? dataArray[0] : 'empty')
         raw3DData.value = dataArray
         results3D.value = process3DData(dataArray)
+        console.log('3D processed data sample:', results3D.value.length > 0 ? results3D.value[0] : 'empty')
         cache.set('3DResults', dataArray)
         return { success: true }
       }

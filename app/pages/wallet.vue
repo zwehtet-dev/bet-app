@@ -1,5 +1,74 @@
 <template>
   <div class="text-white">
+    <!-- Loading Skeleton State -->
+    <div v-if="!pageReady" class="animate-pulse">
+      <!-- Balance Card Skeleton -->
+      <div class="px-4 py-3">
+        <div class="relative bg-white/5 rounded-2xl p-5 border border-white/5">
+          <div class="flex justify-between items-start mb-5">
+            <div>
+              <div class="h-3 bg-white/10 rounded w-24 mb-2"></div>
+              <div class="h-8 bg-white/10 rounded w-32 mb-1"></div>
+              <div class="h-3 bg-white/10 rounded w-12"></div>
+            </div>
+            <div class="w-14 h-14 bg-white/10 rounded-2xl"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="h-12 bg-white/10 rounded-xl"></div>
+            <div class="h-12 bg-white/10 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Stats Skeleton -->
+      <div class="px-4 py-2">
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+            <div class="h-5 bg-white/10 rounded w-16 mx-auto mb-1"></div>
+            <div class="h-3 bg-white/10 rounded w-12 mx-auto"></div>
+          </div>
+          <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+            <div class="h-5 bg-white/10 rounded w-16 mx-auto mb-1"></div>
+            <div class="h-3 bg-white/10 rounded w-12 mx-auto"></div>
+          </div>
+          <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+            <div class="h-5 bg-white/10 rounded w-10 mx-auto mb-1"></div>
+            <div class="h-3 bg-white/10 rounded w-12 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Payment Methods Skeleton -->
+      <div class="px-4 py-3">
+        <div class="h-4 bg-white/10 rounded w-28 mb-3"></div>
+        <div class="grid grid-cols-4 gap-2">
+          <div v-for="i in 4" :key="i" class="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
+            <div class="w-9 h-9 bg-white/10 rounded-lg mx-auto mb-1.5"></div>
+            <div class="h-3 bg-white/10 rounded w-12 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Transaction History Skeleton -->
+      <div class="px-4 py-3">
+        <div class="flex items-center justify-between mb-3">
+          <div class="h-4 bg-white/10 rounded w-32"></div>
+          <div class="h-7 bg-white/10 rounded w-20"></div>
+        </div>
+        <div class="space-y-2">
+          <div v-for="i in 3" :key="i" class="bg-white/5 rounded-xl p-3.5 border border-white/5 flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/10 rounded-xl"></div>
+            <div class="flex-1">
+              <div class="h-4 bg-white/10 rounded w-20 mb-1"></div>
+              <div class="h-3 bg-white/10 rounded w-24"></div>
+            </div>
+            <div class="text-right">
+              <div class="h-4 bg-white/10 rounded w-16 mb-1 ml-auto"></div>
+              <div class="h-4 bg-white/10 rounded w-12 ml-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
     <!-- Blocked Warning -->
     <div v-if="isBlocked" class="px-4 py-3">
       <div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4">
@@ -34,7 +103,12 @@
 
     <div class="px-4 py-3">
       <h2 class="text-sm font-bold mb-3">{{ t('paymentMethods') }}</h2>
-      <div v-if="paymentMethodsLoading" class="text-center py-4"><p class="text-sm text-white/40">Loading...</p></div>
+      <div v-if="paymentMethodsLoading" class="grid grid-cols-4 gap-2">
+        <div v-for="i in 4" :key="i" class="bg-white/5 rounded-xl p-2.5 text-center border border-white/5 animate-pulse">
+          <div class="w-9 h-9 bg-white/10 rounded-lg mx-auto mb-1.5"></div>
+          <div class="h-3 bg-white/10 rounded w-12 mx-auto"></div>
+        </div>
+      </div>
       <div v-else class="grid grid-cols-4 gap-2">
         <div v-for="m in activePaymentMethods" :key="m.id" class="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
           <div class="w-9 h-9 rounded-lg overflow-hidden mx-auto mb-1.5 bg-white/10">
@@ -53,7 +127,19 @@
         <h2 class="text-sm font-bold">{{ t('transactionHistory') }}</h2>
         <select v-model="filter" class="bg-white/5 text-xs rounded-lg px-2 py-1.5 border border-white/10"><option value="all">All</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option></select>
       </div>
-      <div v-if="transactionLoading && !transactions.length" class="text-center py-8"><p class="text-sm text-white/40">Loading...</p></div>
+      <div v-if="transactionLoading && !transactions.length" class="space-y-2">
+        <div v-for="i in 3" :key="i" class="bg-white/5 rounded-xl p-3.5 border border-white/5 flex items-center gap-3 animate-pulse">
+          <div class="w-10 h-10 bg-white/10 rounded-xl"></div>
+          <div class="flex-1">
+            <div class="h-4 bg-white/10 rounded w-20 mb-1"></div>
+            <div class="h-3 bg-white/10 rounded w-24"></div>
+          </div>
+          <div class="text-right">
+            <div class="h-4 bg-white/10 rounded w-16 mb-1 ml-auto"></div>
+            <div class="h-4 bg-white/10 rounded w-12 ml-auto"></div>
+          </div>
+        </div>
+      </div>
       <div v-else class="space-y-2">
         <div v-for="tx in filteredTx" :key="tx.id" class="bg-white/5 rounded-xl p-3.5 border border-white/5 flex items-center gap-3">
           <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', tx.type === 'deposit' ? 'bg-green-500/20' : 'bg-red-500/20']"><svg class="w-5 h-5" :class="tx.type === 'deposit' ? 'text-green-400' : 'text-red-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path v-if="tx.type === 'deposit'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /><path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4" /></svg></div>
@@ -63,6 +149,7 @@
         <div v-if="!filteredTx.length" class="text-center py-10"><p class="text-sm text-white/40">No transactions</p></div>
       </div>
     </div>
+    </template>
 
     <Teleport to="body">
       <Transition name="fade">
@@ -120,18 +207,12 @@ import { useAuth } from '~/composables/useAuth'
 import { useWallet } from '~/composables/useWallet'
 import { useApi } from '~/composables/useApi'
 
-// Lazy load - define page meta
 definePageMeta({
   keepalive: true
 })
 
 const { t } = useLanguage()
-const { userBalance, isLoggedIn, refreshProfile } = useAuth()
-
-// Redirect if not logged in
-if (!isLoggedIn.value) {
-  await navigateTo('/login')
-}
+const { userBalance, isLoggedIn, refreshProfile, initAuth } = useAuth()
 const { paymentMethods, transactions, paymentMethodsLoading, transactionLoading, loadPaymentMethods, loadTransactionHistory, requestDeposit, requestWithdrawal, activePaymentMethods, totalTransactions, totalDeposits, totalWithdrawals, getStatusBadgeColor, formatAmount } = useWallet()
 const api = useApi()
 
@@ -142,6 +223,7 @@ const toast = ref(null)
 const form = ref({ amount: 10000, methodId: '', txId: '', accNum: '' })
 const isBlocked = ref(false)
 const blockReason = ref('')
+const pageReady = ref(false)
 
 const filteredTx = computed(() => filter.value === 'all' ? transactions.value : transactions.value.filter(t => t.type === filter.value))
 const selectedMethod = computed(() => activePaymentMethods.value.find(m => m.id == form.value.methodId))
@@ -183,7 +265,17 @@ const submitWithdraw = async () => {
   loading.value = false
 }
 
-onMounted(async () => { 
+onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
+  // Check if logged in after auth is initialized
+  if (!isLoggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  
+  pageReady.value = true
   await loadPaymentMethods()
   await loadTransactionHistory()
   await checkBlocked()

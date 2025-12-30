@@ -106,7 +106,7 @@
       <div class="grid grid-cols-2 gap-3">
         <NuxtLink v-for="g in games" :key="g.path" :to="g.path" class="group touch-manipulation">
           <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 text-center border border-white/5 transition-colors active:scale-[0.98]">
-            <div :class="['w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg transition-transform group-hover:scale-110', g.gradient, g.shadow]"><span class="text-lg font-black">{{ g.label }}</span></div>
+            <div :class="['w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg transition-transform group-hover:scale-110 overflow-hidden', g.gradient, g.shadow]"><img :src="g.icon" :alt="t(g.title)" class="w-full h-full object-cover" /></div>
             <p class="font-bold text-sm mb-0.5">{{ t(g.title) }}</p><p class="text-[10px] text-white/40">{{ t(g.subtitle) }}</p><p class="text-[10px] text-green-400 font-bold mt-1">{{ g.multiplier }}</p>
           </div>
         </NuxtLink>
@@ -114,19 +114,21 @@
     </div>
 
     <!-- Login Prompt -->
-    <div v-if="!isLoggedIn && !authLoading" class="px-4 py-6">
-      <div class="bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-transparent rounded-2xl p-6 border border-amber-500/20 text-center">
-        <div class="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-500/25">
-          <span class="text-xl font-black text-white">2D</span>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-2">Welcome to 2D3D Betting!</h3>
-        <p class="text-white/60 mb-6">Sign in to start betting and win big prizes</p>
-        <div class="space-y-3">
-          <NuxtLink to="/login" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-transform flex items-center justify-center touch-manipulation">Sign In</NuxtLink>
-          <NuxtLink to="/signup" class="w-full bg-white/10 hover:bg-white/15 py-3.5 rounded-xl font-medium text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all active:scale-[0.98] flex items-center justify-center touch-manipulation">Create New Account</NuxtLink>
+    <ClientOnly>
+      <div v-if="!isLoggedIn && !authLoading" class="px-4 py-6">
+        <div class="bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-transparent rounded-2xl p-6 border border-amber-500/20 text-center">
+          <div class="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-4 shadow-xl shadow-orange-500/25">
+            <img src="/images/logo.jpg" alt="2D3D Logo" class="w-full h-full object-cover">
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">Welcome to 2D3D Betting!</h3>
+          <p class="text-white/60 mb-6">Sign in to start betting and win big prizes</p>
+          <div class="space-y-3">
+            <NuxtLink to="/login" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-transform flex items-center justify-center touch-manipulation">Sign In</NuxtLink>
+            <NuxtLink to="/signup" class="w-full bg-white/10 hover:bg-white/15 py-3.5 rounded-xl font-medium text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all active:scale-[0.98] flex items-center justify-center touch-manipulation">Create New Account</NuxtLink>
+          </div>
         </div>
       </div>
-    </div>
+    </ClientOnly>
   </div>
 </template>
 
@@ -159,10 +161,10 @@ const resultsLoading = ref(true)
 const isLive2DOpen = ref(false)
 
 const games = [
-  { path: '/2d', title: '2dBetting', subtitle: 'pick2Digits', multiplier: 'Win 85x', label: '2D', gradient: 'bg-gradient-to-br from-blue-500 to-blue-600', shadow: 'shadow-blue-500/25' },
-  { path: '/3d', title: '3dBetting', subtitle: 'pick3Digits', multiplier: 'Win 500x', label: '3D', gradient: 'bg-gradient-to-br from-purple-500 to-purple-600', shadow: 'shadow-purple-500/25' },
-  { path: '/bawdi', title: 'bawdiBetting', subtitle: 'footballBetting', multiplier: 'Body Style', label: '⚽', gradient: 'bg-gradient-to-br from-green-500 to-green-600', shadow: 'shadow-green-500/25' },
-  { path: '/maung', title: 'maungBetting', subtitle: 'footballBetting', multiplier: 'Maung Style', label: '🏆', gradient: 'bg-gradient-to-br from-orange-500 to-red-500', shadow: 'shadow-orange-500/25' }
+  { path: '/2d', title: '2dBetting', subtitle: 'pick2Digits', multiplier: 'Win 85x', icon: '/images/2d_icon.png', gradient: 'bg-gradient-to-br from-blue-500 to-blue-600', shadow: 'shadow-blue-500/25' },
+  { path: '/3d', title: '3dBetting', subtitle: 'pick3Digits', multiplier: 'Win 500x', icon: '/images/3d_icon.png', gradient: 'bg-gradient-to-br from-purple-500 to-purple-600', shadow: 'shadow-purple-500/25' },
+  { path: '/bawdi', title: 'bawdiBetting', subtitle: 'footballBetting', multiplier: 'Body Style', icon: '/images/bawdi_icon.png', gradient: 'bg-gradient-to-br from-green-500 to-green-600', shadow: 'shadow-green-500/25' },
+  { path: '/maung', title: 'maungBetting', subtitle: 'footballBetting', multiplier: 'Maung Style', icon: '/images/maung_icon.png', gradient: 'bg-gradient-to-br from-orange-500 to-red-500', shadow: 'shadow-orange-500/25' }
 ]
 
 const defaultSlides = [

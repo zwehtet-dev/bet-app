@@ -1,14 +1,13 @@
 <template>
   <div class="text-white">
-    <!-- Not Logged In -->
-    <div v-if="!isLoggedIn" class="px-4 py-12 text-center">
-      <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+    <!-- Loading State -->
+    <div v-if="!pageReady" class="px-4 py-12 text-center">
+      <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
         <svg class="w-8 h-8 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <p class="text-sm text-white/50 mb-4">Please login to view your bet history</p>
-      <NuxtLink to="/login" class="inline-block bg-amber-500 px-6 py-2.5 rounded-xl text-sm font-bold">Go to Login</NuxtLink>
+      <p class="text-sm text-white/50">Loading...</p>
     </div>
 
     <template v-else>
@@ -44,7 +43,7 @@
       <div v-else-if="activeGameTab === '2d3d'" class="px-4 py-3 space-y-3">
         <div v-for="bet in filteredBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
           <div class="flex items-center gap-3 mb-3">
-            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black shadow-lg', bet.gameType === '2D' ? 'bg-blue-500 shadow-blue-500/25' : 'bg-purple-500 shadow-purple-500/25']">{{ bet.gameType }}</div>
+            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === '2D' ? 'bg-blue-500 shadow-blue-500/25' : 'bg-purple-500 shadow-purple-500/25']"><img :src="bet.gameType === '2D' ? '/images/2d_icon.png' : '/images/3d_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover" /></div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5"><p class="text-sm font-bold">{{ bet.gameType }} Bet</p><span :class="['text-[10px] px-1.5 py-0.5 rounded font-bold', getBetStatusBg(bet.status)]">{{ bet.status.toUpperCase() }}</span></div>
               <p class="text-[10px] text-white/40">{{ formatDate(bet.createdAt) }}</p>
@@ -68,7 +67,7 @@
       <div v-else class="px-4 py-3 space-y-3">
         <div v-for="bet in filteredSoccerBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
           <div class="flex items-center gap-3 mb-3">
-            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center text-lg shadow-lg', bet.gameType === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']">{{ bet.gameType === 'Maung' ? '🏆' : '⚽' }}</div>
+            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']"><img :src="bet.gameType === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover" /></div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5">
                 <p class="text-sm font-bold">{{ bet.gameType === 'Body' ? 'Bawdi' : bet.gameType }} Bet</p>
@@ -109,7 +108,7 @@
         
         <div v-if="!filteredSoccerBets.length && !initialLoading" class="text-center py-12">
           <div class="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-            <span class="text-2xl">⚽</span>
+            <img src="/images/bawdi_icon.png" alt="Soccer" class="w-full h-full object-cover" />
           </div>
           <p class="text-sm text-white/40">No soccer bets found</p>
           <p class="text-xs text-white/30 mt-2">
@@ -136,13 +135,12 @@ import { useBetting } from '~/composables/useBetting'
 import { useSoccerBetting } from '~/composables/useSoccerBetting'
 import { useAuth } from '~/composables/useAuth'
 
-// Lazy load - define page meta
 definePageMeta({
   keepalive: true
 })
 
 const { t } = useLanguage()
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, initAuth } = useAuth()
 const { betHistory, bettingLoading, getBetHistory, loadMoreBetHistory, getBetStatusBg } = useBetting()
 const { soccerBetHistory, loading: soccerLoading, getSoccerBetHistory } = useSoccerBetting()
 
@@ -153,6 +151,7 @@ const loadingMore = ref(false)
 const hasMoreData = ref(true)
 const infiniteScrollTrigger = ref(null)
 const observer = ref(null)
+const pageReady = ref(false)
 
 const gameTabs = [
   { value: '2d3d', label: '2D/3D', class: 'bg-blue-500 shadow-lg' },
@@ -278,6 +277,16 @@ const cleanupInfiniteScroll = () => {
 }
 
 onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
+  // Check if logged in after auth is initialized
+  if (!isLoggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  
+  pageReady.value = true
   await loadHistory()
   await nextTick()
   setupInfiniteScroll()

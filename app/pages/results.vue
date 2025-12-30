@@ -169,11 +169,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useResults } from '~/composables/useResults'
+import { useAuth } from '~/composables/useAuth'
 
 // Lazy load - define page meta
 definePageMeta({
   keepalive: true
 })
+
+const { initAuth } = useAuth()
 
 const { 
   results2D, 
@@ -347,6 +350,9 @@ const isInTradingHours = () => {
 let refreshInterval = null
 
 onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
   setupObservers()
   await initLoad()
   

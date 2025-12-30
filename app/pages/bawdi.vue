@@ -21,7 +21,7 @@
 
     <!-- Empty State -->
     <div v-else-if="!loading && !matches.length" class="px-4 py-8 text-center">
-      <div class="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-2xl">⚽</span></div>
+      <div class="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3"><img src="/images/bawdi_icon.png" alt="Bawdi" class="w-8 h-8 object-contain" /></div>
       <p class="text-sm text-white/40">No matches available</p>
       <button @click="refreshMatches" class="mt-4 px-4 py-2 bg-white/10 rounded-xl text-xs font-medium touch-manipulation active:scale-95">
         Refresh
@@ -32,9 +32,14 @@
     <div v-else class="px-4 py-2 space-y-3">
       <div v-for="match in matches" :key="match.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
-            {{ match.leagueGroupName || match.league }}
-          </span>
+          <div class="flex space-x-3">
+            <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
+              {{ match.leagueGroupName || match.league }}
+            </span>
+            <span :class="['text-xs px-2 py-1 rounded', getStatusColor(match.status)]">
+              {{ getStatusText(match.status) }}
+            </span>
+          </div>
           <span class="text-[10px] text-white/40">{{ formatMatchDate(match.startDateInMilliSeconds) }}</span>
         </div>
         
@@ -52,12 +57,6 @@
 
         <div v-if="match.gp" class="text-center mb-3">
           <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span>
-        </div>
-
-        <div class="flex items-center justify-center mb-3">
-          <span :class="['text-xs px-2 py-1 rounded', getStatusColor(match.status)]">
-            {{ getStatusText(match.status) }}
-          </span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-3">
@@ -139,12 +138,7 @@ definePageMeta({
   keepalive: true
 })
 
-const { userBalance, isLoggedIn, refreshProfile } = useAuth()
-
-// Redirect if not logged in
-if (!isLoggedIn.value) {
-  await navigateTo('/login')
-}
+const { userBalance, isLoggedIn, refreshProfile, initAuth } = useAuth()
 
 const { matches, loading, loadingMore, bettingLoading, matchesHasMore, loadMatches, loadMoreMatches, placeBodyBet } = useSoccerBetting()
 
@@ -176,8 +170,8 @@ const getStatusColor = (status) => {
 
 const getStatusText = (status) => {
   switch (status) {
-    case 'On_Progress': return 'Open for Betting'
-    case 'Finished': return 'Match Finished'
+    case 'On_Progress': return 'Open'
+    case 'Finished': return 'Finished'
     default: return 'Unknown Status'
   }
 }
@@ -253,6 +247,15 @@ const setupInfiniteScroll = () => {
 }
 
 onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
+  // Check if logged in after auth is initialized
+  if (!isLoggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  
   await loadMatches('Body')
   await nextTick()
   setupInfiniteScroll()

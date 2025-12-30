@@ -139,7 +139,7 @@ definePageMeta({
 })
 
 const { t } = useLanguage()
-const { userBalance, isLoggedIn, refreshProfile } = useAuth()
+const { userBalance, isLoggedIn, refreshProfile, initAuth } = useAuth()
 const api = useApi()
 const { placeBet } = useBetting()
 
@@ -382,6 +382,9 @@ const handleKeydown = (e) => {
 }
 
 onMounted(async () => {
+  // Initialize auth first
+  await initAuth()
+  
   try {
     const result = await api.getGameSettings()
     if (result.msgState === 'data' && result.data) {

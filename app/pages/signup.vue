@@ -3,8 +3,8 @@
     <div class="w-full max-w-sm">
       <!-- Logo and Header -->
       <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-500/25">
-          <span class="text-2xl font-black text-white">2D</span>
+        <div class="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-6 shadow-2xl shadow-orange-500/25">
+          <img src="/images/logo.jpg" alt="2D3D Logo" class="w-full h-full object-cover">
         </div>
         <h1 class="text-3xl font-black text-white mb-2">Join Us Today!</h1>
         <p class="text-white/60">Create your account to start betting</p>
@@ -179,10 +179,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
-import { useRouter } from 'vue-router'
+
+// Use auth layout
+definePageMeta({
+  layout: 'auth'
+})
 
 const { signup, authLoading, isLoggedIn } = useAuth()
-const router = useRouter()
 
 // Redirect if already logged in
 if (isLoggedIn.value) {
@@ -201,7 +204,6 @@ const signupError = ref('')
 const showPassword = ref(false)
 const acceptTerms = ref(false)
 
-// Password strength calculation
 const passwordStrength = computed(() => {
   const password = signupForm.value.password
   if (!password) return 0
@@ -267,20 +269,18 @@ const handleSignup = async () => {
   
   const result = await signup(
     signupForm.value.name,
-    signupForm.value.email, // Using email as secretName
+    signupForm.value.email,
     signupForm.value.password,
     signupForm.value.phone
   )
   
   if (result.success) {
-    // Redirect to home page on successful signup
     await navigateTo('/')
   } else {
     signupError.value = result.error || 'Registration failed. Please try again.'
   }
 }
 
-// Set page title
 useHead({
   title: 'Sign Up - 2D3D Betting'
 })
