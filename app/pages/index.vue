@@ -232,7 +232,8 @@ let slideTimer, liveRefreshTimer, availabilityTimer
 
 onMounted(async () => {
   checkLive2DAvailability()
-  availabilityTimer = setInterval(checkLive2DAvailability, 60000)
+  // Reduced frequency: check every 5 minutes instead of 1 minute
+  availabilityTimer = setInterval(checkLive2DAvailability, 300000)
   
   await initAuth()
   balanceLoading.value = false
@@ -258,13 +259,13 @@ onMounted(async () => {
   updateResults().then(() => { resultsLoading.value = false })
   loadResults(false)
   
-  // Carousel auto-slide every 5 seconds
+  // Carousel auto-slide every 6 seconds (increased from 5)
   slideTimer = setInterval(() => { 
     if (slides.value.length > 0) currentSlide.value = (currentSlide.value + 1) % slides.value.length 
-  }, 5000)
+  }, 6000)
   
-  // Reduced refresh rate: 30 seconds instead of 10 for better mobile performance
-  liveRefreshTimer = setInterval(updateResults, 30000)
+  // Reduced refresh rate: 60 seconds instead of 30 for better mobile performance
+  liveRefreshTimer = setInterval(updateResults, 60000)
 })
 
 onUnmounted(() => {

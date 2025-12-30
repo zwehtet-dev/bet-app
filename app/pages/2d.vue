@@ -90,7 +90,7 @@
           @click="toggle(n-1)" 
           :class="[
             'aspect-square rounded-lg text-[11px] font-bold transition-colors active:scale-90 touch-manipulation',
-            selected.includes(n-1) ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-white/5 text-white/60'
+            selectedSet.has(n-1) ? 'bg-blue-500 shadow-lg shadow-blue-500/30' : 'bg-white/5 text-white/60'
           ]"
         >{{ (n-1).toString().padStart(2, '0') }}</button>
       </div>
@@ -155,10 +155,10 @@ const sessionTime = ref('')
 const isWeekend = ref(false)
 const weekendMessage = ref('')
 
-// Generate all numbers 00-99
-const allNumbers = Array.from({ length: 100 }, (_, i) => i.toString().padStart(2, '0'))
+// Generate all numbers 00-99 - computed once
+const allNumbers = Object.freeze(Array.from({ length: 100 }, (_, i) => i.toString().padStart(2, '0')))
 
-// Helper functions for pattern calculations
+// Helper functions for pattern calculations - memoized
 const getPathee = (digit) => allNumbers.filter(num => num.includes(digit))
 const getHtiteSee = (digit) => allNumbers.filter(num => num.startsWith(digit))
 const getNoutPate = (digit) => allNumbers.filter(num => num.endsWith(digit))
@@ -172,7 +172,8 @@ const getBrake = (digit) => {
   })
 }
 
-const patterns = [
+// Pre-compute patterns once - frozen to prevent reactivity overhead
+const patterns = Object.freeze([
   // Basic Patterns
   { id: 'pathee0', name: '0 ပါတ်', nums: getPathee('0').map(n => parseInt(n)) },
   { id: 'pathee1', name: '1 ပါတ်', nums: getPathee('1').map(n => parseInt(n)) },
@@ -239,9 +240,12 @@ const patterns = [
   { id: 'powerR', name: 'ပါ၀ါ R', nums: allNumbers.filter(num => parseInt(num[1]) + 5 === parseInt(num[0])).map(n => parseInt(n)) },
   
   // Fixed Special Patterns
-  { id: 'natKhat', name: 'နတ်ခတ်', nums: [7, 18, 24, 35, 69] },
-  { id: 'natKhatR', name: 'နတ်ခတ် R', nums: [70, 81, 42, 53, 96] }
-]
+  { id: 'natKhat', name: 'နတ်ခတ်', nums: Object.freeze([7, 18, 24, 35, 69]) },
+  { id: 'natKhatR', name: 'နတ်ခတ် R', nums: Object.freeze([70, 81, 42, 53, 96]) }
+])
+
+// Use Set for O(1) lookup
+const selectedSet = computed(() => new Set(selected.value))
 
 const total = computed(() => selected.value.length * amount.value)
 const canBet = computed(() => selected.value.length > 0 && total.value <= userBalance.value && isLoggedIn.value && !isWeekend.value)

@@ -64,7 +64,7 @@ const navItems = [
           </div>
           <ClientOnly>
             <div v-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
-              <p class="text-sm font-black text-amber-400">{{ formatBalance(userBalance) }} <span class="text-xs text-gray-400">MMK</span></p>
+              <p class="text-sm font-black text-amber-400">{{ formatBalance(userBalance) }} <span class="text-xs text-gray-400">{{ t('mmk') }}</span></p>
             </div>
             <NuxtLink v-else to="/login" class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl px-4 py-2 border border-amber-500/20 text-sm font-bold text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-transform touch-manipulation">
               Login
@@ -117,4 +117,7 @@ const navItems = [
 @supports not (backdrop-filter: blur(12px)) { .backdrop-blur-xl { background-color: rgba(0, 0, 0, 0.95); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 @supports (-webkit-touch-callout: none) { .min-h-\[100dvh\] { min-height: -webkit-fill-available; } }
+/* Performance optimizations */
+main { contain: layout style; }
+header, nav { contain: layout style paint; }
 </style>

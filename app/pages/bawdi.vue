@@ -230,9 +230,14 @@ const placeBetHandler = async () => {
 
 const refreshMatches = () => loadMatches('Body', true)
 
-// Infinite scroll setup
+// Infinite scroll setup with proper cleanup
 const setupInfiniteScroll = () => {
   if (!infiniteScrollTrigger.value) return
+  
+  // Disconnect existing observer if any
+  if (observer) {
+    observer.disconnect()
+  }
   
   observer = new IntersectionObserver(
     (entries) => {
@@ -266,6 +271,8 @@ onUnmounted(() => {
     observer.disconnect()
     observer = null
   }
+  // Clear selected bets to free memory
+  selectedBets.value = []
 })
 </script>
 

@@ -43,7 +43,7 @@
       <div v-else-if="activeGameTab === '2d3d'" class="px-4 py-3 space-y-3">
         <div v-for="bet in filteredBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
           <div class="flex items-center gap-3 mb-3">
-            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === '2D' ? 'bg-blue-500 shadow-blue-500/25' : 'bg-purple-500 shadow-purple-500/25']"><img :src="bet.gameType === '2D' ? '/images/2d_icon.png' : '/images/3d_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover" /></div>
+            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === '2D' ? 'bg-blue-500 shadow-blue-500/25' : 'bg-purple-500 shadow-purple-500/25']"><img :src="bet.gameType === '2D' ? '/images/2d_icon.png' : '/images/3d_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover rounded-lg" /></div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5"><p class="text-sm font-bold">{{ bet.gameType }} Bet</p><span :class="['text-[10px] px-1.5 py-0.5 rounded font-bold', getBetStatusBg(bet.status)]">{{ bet.status.toUpperCase() }}</span></div>
               <p class="text-[10px] text-white/40">{{ formatDate(bet.createdAt) }}</p>
@@ -67,7 +67,7 @@
       <div v-else class="px-4 py-3 space-y-3">
         <div v-for="bet in filteredSoccerBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
           <div class="flex items-center gap-3 mb-3">
-            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']"><img :src="bet.gameType === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover" /></div>
+            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']"><img :src="bet.gameType === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover rounded-lg" /></div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5">
                 <p class="text-sm font-bold">{{ bet.gameType === 'Body' ? 'Bawdi' : bet.gameType }} Bet</p>
@@ -108,7 +108,7 @@
         
         <div v-if="!filteredSoccerBets.length && !initialLoading" class="text-center py-12">
           <div class="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-            <img src="/images/bawdi_icon.png" alt="Soccer" class="w-full h-full object-cover" />
+            <img src="/images/bawdi_icon.png" alt="Soccer" class="w-full h-full object-cover rounded-lg" />
           </div>
           <p class="text-sm text-white/40">No soccer bets found</p>
           <p class="text-xs text-white/30 mt-2">
@@ -166,8 +166,15 @@ const filters = [
 ]
 
 const allBets = computed(() => activeGameTab.value === '2d3d' ? betHistory.value : soccerBetHistory.value)
-const filteredBets = computed(() => activeFilter.value === 'all' ? betHistory.value : betHistory.value.filter(b => b.status === activeFilter.value))
-const filteredSoccerBets = computed(() => activeFilter.value === 'all' ? soccerBetHistory.value : soccerBetHistory.value.filter(b => b.status === activeFilter.value))
+// Limit displayed items to prevent DOM overload - show max 50 items at a time
+const filteredBets = computed(() => {
+  const bets = activeFilter.value === 'all' ? betHistory.value : betHistory.value.filter(b => b.status === activeFilter.value)
+  return bets.slice(0, 50)
+})
+const filteredSoccerBets = computed(() => {
+  const bets = activeFilter.value === 'all' ? soccerBetHistory.value : soccerBetHistory.value.filter(b => b.status === activeFilter.value)
+  return bets.slice(0, 50)
+})
 
 const totalBetsCount = computed(() => allBets.value.length)
 const totalWinAmountCalc = computed(() => allBets.value.filter(b => b.status === 'won').reduce((sum, b) => sum + (b.winAmount || 0), 0))
@@ -294,5 +301,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   cleanupInfiniteScroll()
+  // Clear refs to help garbage collection
+  infiniteScrollTrigger.value = null
 })
 </script>

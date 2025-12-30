@@ -69,7 +69,6 @@
           <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-xl shadow-purple-500/25 ring-4 ring-white/10"><span class="text-2xl font-black">{{ initials }}</span></div>
           <h2 class="text-lg font-black mb-0.5">{{ userName || 'User' }}</h2>
           <p class="text-sm text-white/40 mb-4">{{ userPhone || 'Phone not set' }}</p>
-          <div class="inline-block bg-white/10 rounded-xl px-4 py-2"><p class="text-[10px] text-white/40">BALANCE</p><p class="text-lg font-black text-amber-400">{{ formatBalance(userBalance) }} <span class="text-xs text-white/40">{{ t('mmk') }}</span></p></div>
         </div>
       </div>
     </div>
@@ -152,7 +151,7 @@ definePageMeta({
 })
 
 const { t, setLanguage, currentLanguage } = useLanguage()
-const { userBalance, logout, userName, userPhone, changePassword: apiChangePassword, isLoggedIn, initAuth } = useAuth()
+const { logout, userName, userPhone, changePassword: apiChangePassword, isLoggedIn, initAuth } = useAuth()
 const api = useApi()
 
 const showPwModal = ref(false)
@@ -165,7 +164,6 @@ const pageReady = ref(false)
 const initials = computed(() => (userName.value || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2))
 const canChangePw = computed(() => pwForm.value.old.length >= 6 && pwForm.value.new.length >= 6)
 
-const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
 const setLang = (lang) => { setLanguage(lang); showToast('Language changed!', 'success') }

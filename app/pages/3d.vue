@@ -30,7 +30,7 @@
         </div>
         <div class="text-center"><p class="text-xs text-white/40 mb-1">{{ t('your3DNumber') }}</p><p class="text-4xl font-black text-purple-400">{{ currentNum }}</p></div>
         <div v-if="isValid && perms.length" class="mt-4 pt-4 border-t border-white/10">
-          <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-white/40">Permutations:</span><button @click="addPerms" class="text-[10px] bg-orange-500 px-2.5 py-1 rounded-lg font-bold active:scale-95">+{{ perms.length }}</button></div>
+          <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-white/40">Permutations:</span><button @click="addPerms" class="text-[10px] bg-orange-500 px-2.5 py-1 rounded-lg font-bold active:scale-95">+R</button></div>
           <div class="flex flex-wrap gap-1"><span v-for="p in perms.slice(0, 5)" :key="p" class="text-[10px] bg-orange-500/20 text-orange-300 px-1.5 py-0.5 rounded">{{ p.toString().padStart(3, '0') }}</span></div>
         </div>
       </div>
@@ -39,14 +39,27 @@
     <div v-if="mode === 'grid'" class="px-4 py-2">
       <div class="bg-white/5 rounded-xl p-4 border border-white/5 mb-3">
         <div class="flex items-center justify-between mb-3"><p class="text-xs text-white/50">{{ t('selectedNumbers') }} <span class="text-purple-400">({{ selected.length }})</span></p><button v-if="selected.length" @click="selected = []" class="text-[10px] text-red-400 font-medium">{{ t('clearAll') }}</button></div>
-        <div class="flex flex-wrap gap-1.5 min-h-[32px]">
-          <span v-for="n in selected" :key="n" class="bg-purple-500 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">{{ n.toString().padStart(3, '0') }}<button @click="selected = selected.filter(x => x !== n)" class="text-white/60 hover:text-white">×</button></span>
+        <div class="flex flex-wrap gap-1.5 min-h-[32px] max-h-20 overflow-y-auto">
+          <span v-for="n in selected.slice(0, 20)" :key="n" class="bg-purple-500 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">{{ n.toString().padStart(3, '0') }}<button @click="removeSelected(n)" class="text-white/60 hover:text-white">×</button></span>
+          <span v-if="selected.length > 20" class="text-xs text-white/40">+{{ selected.length - 20 }} more</span>
           <span v-if="!selected.length" class="text-xs text-white/30">Tap numbers below</span>
         </div>
       </div>
-      <div class="flex gap-2 mb-3"><button v-for="c in [1, 3, 5]" :key="c" @click="quickPick(c)" class="flex-1 bg-green-500/20 text-green-400 py-2.5 rounded-xl text-xs font-bold border border-green-500/30 active:scale-95">🎲 Lucky {{ c }}</button></div>
-      <div class="space-y-2 max-h-[250px] overflow-y-auto" style="contain: content; -webkit-overflow-scrolling: touch;">
-        <div v-for="r in ranges" :key="r.label" class="bg-white/5 rounded-xl p-2.5 border border-white/5"><p class="text-[10px] text-white/40 mb-1.5">{{ r.label }}</p><div class="grid grid-cols-10 gap-0.5"><button v-for="n in r.nums" :key="n" @click="toggleGrid(n)" :class="['aspect-square rounded text-[8px] font-bold transition-colors active:scale-90 touch-manipulation', selected.includes(n) ? 'bg-purple-500' : 'bg-white/5 text-white/40']">{{ n.toString().padStart(3, '0') }}</button></div></div>
+      <!-- Range Selector Dropdown -->
+      <div class="mb-3">
+        <select v-model="expandedRange" class="w-full bg-white/10 text-white rounded-xl px-4 py-3 text-sm font-bold border border-white/10 focus:border-purple-500 focus:outline-none appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239ca3af%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 20px;">
+          <option value="-1" class="bg-gray-900 text-white">Select number range...</option>
+          <option v-for="i in 10" :key="i-1" :value="i-1" class="bg-gray-900 text-white">{{ (i-1) }}00 - {{ (i-1) }}99</option>
+        </select>
+      </div>
+      <div v-if="expandedRange >= 0" class="bg-white/5 rounded-xl p-3 border border-white/5">
+        <p class="text-[10px] text-white/40 mb-2">{{ expandedRange }}00-{{ expandedRange }}99</p>
+        <div class="grid grid-cols-10 gap-1" style="contain: layout style;">
+          <button v-for="n in 100" :key="expandedRange * 100 + n - 1" @click="toggleGrid(expandedRange * 100 + n - 1)" :class="['aspect-square rounded text-[8px] font-bold transition-colors active:scale-90 touch-manipulation', selectedSet.has(expandedRange * 100 + n - 1) ? 'bg-purple-500' : 'bg-white/5 text-white/40']">{{ (expandedRange * 100 + n - 1).toString().padStart(3, '0') }}</button>
+        </div>
+      </div>
+      <div v-else class="bg-white/5 rounded-xl p-4 border border-white/5 text-center">
+        <p class="text-xs text-white/40">Select a range above to pick numbers</p>
       </div>
     </div>
 
@@ -105,8 +118,10 @@ const multiplier = ref(500)
 const nextDrawDate = ref('')
 const daysLeft = ref(0)
 const isDrawDay = ref(false)
+const expandedRange = ref(-1)
 
-const ranges = Array.from({ length: 10 }, (_, i) => ({ label: `${i}00-${i}99`, nums: Array.from({ length: 100 }, (_, j) => i * 100 + j) }))
+// Use Set for O(1) lookup instead of array.includes()
+const selectedSet = computed(() => new Set(selected.value))
 
 const currentNum = computed(() => digits.value.map(d => d || '0').join(''))
 const isValid = computed(() => digits.value.every(d => d !== ''))
@@ -205,6 +220,7 @@ const onKeydown = (e, i) => {
   }
 }
 const toggleGrid = (n) => { const i = selected.value.indexOf(n); i > -1 ? selected.value.splice(i, 1) : selected.value.push(n) }
+const removeSelected = (n) => { selected.value = selected.value.filter(x => x !== n) }
 const quickPick = (c) => { selected.value = []; while (selected.value.length < c) { const n = Math.floor(Math.random() * 1000); if (!selected.value.includes(n)) selected.value.push(n) } }
 const addPerms = () => { 
   const original = parseInt(currentNum.value)

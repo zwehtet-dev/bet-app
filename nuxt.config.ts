@@ -21,7 +21,8 @@ export default defineNuxtConfig({
   
   experimental: {
     payloadExtraction: true,
-    renderJsonPayloads: true
+    renderJsonPayloads: true,
+    componentIslands: false
   },
   
   components: {
@@ -36,7 +37,14 @@ export default defineNuxtConfig({
   vite: {
     build: {
       cssCodeSplit: true,
-      chunkSizeWarningLimit: 500
+      chunkSizeWarningLimit: 500,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vue-vendor': ['vue', 'vue-router']
+          }
+        }
+      }
     },
     optimizeDeps: {
       include: ['vue', 'vue-router']
@@ -46,6 +54,10 @@ export default defineNuxtConfig({
   nitro: {
     compressPublicAssets: true,
     minify: true
+  },
+  
+  vue: {
+    propsDestructure: true
   },
   
   app: {
