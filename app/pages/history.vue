@@ -25,15 +25,6 @@
         </div>
       </div>
 
-      <!-- Stats -->
-      <div class="px-4 py-2">
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5"><p class="text-lg font-black">{{ totalBetsCount }}</p><p class="text-[10px] text-white/40">Total Bets</p></div>
-          <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5"><p class="text-lg font-black text-green-400">{{ formatBalance(totalWinAmountCalc) }}</p><p class="text-[10px] text-white/40">Won</p></div>
-          <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5"><p class="text-lg font-black" :class="netProfitCalc >= 0 ? 'text-green-400' : 'text-red-400'">{{ netProfitCalc >= 0 ? '+' : '' }}{{ formatBalance(netProfitCalc) }}</p><p class="text-[10px] text-white/40">Profit</p></div>
-        </div>
-      </div>
-
       <!-- Initial Loading Skeleton -->
       <div v-if="initialLoading" class="px-4 py-3 space-y-3">
         <SkeletonLoader v-for="i in 5" :key="i" type="list-item" />
@@ -65,9 +56,16 @@
 
       <!-- Soccer Bets -->
       <div v-else class="px-4 py-3 space-y-3">
-        <div v-for="bet in filteredSoccerBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
-          <div class="flex items-center gap-3 mb-3">
-            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']"><img :src="bet.gameType === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover rounded-lg" /></div>
+        <div 
+          v-for="bet in filteredSoccerBets" 
+          :key="bet.id" 
+          @click="viewSoccerBetDetails(bet.id)"
+          class="bg-white/5 rounded-xl p-4 border border-white/5 cursor-pointer active:scale-[0.98] transition-transform"
+        >
+          <div class="flex items-center gap-3">
+            <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']">
+              <img :src="bet.gameType === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover rounded-lg" />
+            </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5">
                 <p class="text-sm font-bold">{{ bet.gameType === 'Body' ? 'Bawdi' : bet.gameType }} Bet</p>
@@ -76,32 +74,7 @@
               <p class="text-[10px] text-white/40">{{ formatDate(bet.createdAt) }}</p>
             </div>
             <div class="text-right">
-              <p class="text-xs text-white/50">{{ formatBalance(bet.amount || bet.totalAmount) }}</p>
-              <p v-if="bet.status === 'won'" class="text-sm font-black text-green-400">+{{ formatBalance(bet.winAmount) }}</p>
-            </div>
-          </div>
-          
-          <!-- Simple Soccer Bet Details Display -->
-          <div class="bg-white/5 rounded-lg p-2.5">
-            <div v-if="bet.soccerBetDetails && bet.soccerBetDetails.length" class="space-y-1">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-[10px] text-white/40">Matches:</span>
-                <span class="text-[10px] text-white/60">{{ bet.soccerBetDetails.length }} selection{{ bet.soccerBetDetails.length > 1 ? 's' : '' }}</span>
-              </div>
-              
-              <!-- Simple list of selections -->
-              <div v-for="(detail, index) in bet.soccerBetDetails" :key="index" class="text-xs text-white/70">
-                <span class="text-white/90">Match {{ detail.gameId || index + 1 }}</span>
-                <span v-if="detail.amount" class="ml-2 text-amber-400">({{ formatBalance(detail.amount) }} MMK)</span>
-                <span v-if="detail.isWin === true" class="ml-2 text-green-400">✓ Won</span>
-                <span v-else-if="detail.isWin === false" class="ml-2 text-red-400">✗ Lost</span>
-                <span v-else class="ml-2 text-yellow-400">⏳ Pending</span>
-              </div>
-            </div>
-            
-            <!-- Fallback for bets without details -->
-            <div v-else class="text-[10px] text-white/40">
-              {{ bet.gameType }} bet - No details available
+              <p class="text-sm font-bold">{{ formatBalance(bet.amount || bet.totalAmount) }}</p>
             </div>
           </div>
         </div>
@@ -111,9 +84,6 @@
             <img src="/images/bawdi_icon.png" alt="Soccer" class="w-full h-full object-cover rounded-lg" />
           </div>
           <p class="text-sm text-white/40">No soccer bets found</p>
-          <p class="text-xs text-white/30 mt-2">
-            Raw soccer history count: {{ soccerBetHistory.length }}
-          </p>
         </div>
       </div>
 
@@ -165,7 +135,6 @@ const filters = [
   { value: 'pending', label: 'pending', class: 'bg-yellow-500 text-black' }
 ]
 
-const allBets = computed(() => activeGameTab.value === '2d3d' ? betHistory.value : soccerBetHistory.value)
 // Limit displayed items to prevent DOM overload - show max 50 items at a time
 const filteredBets = computed(() => {
   const bets = activeFilter.value === 'all' ? betHistory.value : betHistory.value.filter(b => b.status === activeFilter.value)
@@ -176,15 +145,12 @@ const filteredSoccerBets = computed(() => {
   return bets.slice(0, 50)
 })
 
-const totalBetsCount = computed(() => allBets.value.length)
-const totalWinAmountCalc = computed(() => allBets.value.filter(b => b.status === 'won').reduce((sum, b) => sum + (b.winAmount || 0), 0))
-const netProfitCalc = computed(() => {
-  const totalBet = allBets.value.reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0)
-  return totalWinAmountCalc.value - totalBet
-})
-
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
+
+const viewSoccerBetDetails = (betId) => {
+  navigateTo(`/soccer-bet-details?id=${betId}`)
+}
 
 const loadHistory = async () => {
   if (!isLoggedIn.value) return

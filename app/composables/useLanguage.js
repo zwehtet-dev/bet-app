@@ -316,12 +316,12 @@ const translations = {
     selectedNumbers: 'ရွေးချယ်ထားသော နံပါတ်များ',
     clearAll: 'အားလုံး ရှင်းလင်းရန်',
     quickPick: 'လျင်မြန်စွာ ရွေးချယ်ရန်',
-    betAmount: 'လောင်းကစား ပမာণ',
-    amountPerNumber: 'နံပါတ်တစ်လုံးအတွက် ပမာণ',
+    betAmount: 'လောင်းကစား ပမာဏ',
+    amountPerNumber: 'နံပါတ်တစ်လုံးအတွက် ပမာဏ',
     betSummary: 'လောင်းကစား အကျဉ်းချုပ်',
     numbersSelected: 'ရွေးချယ်ထားသော နံပါတ်များ',
     totalBet: 'စုစုပေါင်း လောင်းကစား',
-    potentialWin: 'အနိုင်ရနိုင်သော ပမာණ',
+    potentialWin: 'အနိုင်ရနိုင်သော ပမာဏ',
     placeBet: 'လောင်းကစား ထားရန်',
     selectNumbers: 'နံပါတ်များ ရွေးချယ်ပါ',
     insufficientBalance: 'လက်ကျန်ငွေ မလုံလောက်ပါ',
@@ -363,7 +363,7 @@ const translations = {
     totalWins: 'စုစုပေါင်း အနိုင်',
     totalLosses: 'စုစုပေါင်း အရှုံး',
     netPL: 'အသားတင် အရှုံးတင်',
-    allBets: 'လောင်းကစား အားလုံး',
+    allBets: 'အားလုံး',
     won: 'အနိုင်',
     lost: 'အရှုံး',
     pending: 'စောင့်ဆိုင်းဆဲ',
@@ -382,7 +382,7 @@ const translations = {
     topUp: 'ငွေဖြည့်ရန်',
     thisMonth: 'ဒီလ',
     betsPlaced: 'ထားသော လောင်းကစားများ',
-    amountWon: 'အနိုင်ရသော ပမာණ',
+    amountWon: 'အနိုင်ရသော ပမာဏ',
     favoriteGame: 'အကြိုက်ဆုံး ဂိမ်း',
     winRate: 'အနိုင်ရ နှုန်း',
     settings: 'ဆက်တင်များ',
@@ -530,7 +530,7 @@ const translations = {
     lucky1: 'ကံကောင်း 1 လုံး',
     lucky3: 'ကံကောင်း 3 လုံး',
     lucky5: 'ကံကောင်း 5 လုံး',
-    amountForNumber: 'နံပါတ်အတွက် ပမာណ'
+    amountForNumber: 'နံပါတ်အတွက် ပမာဏ'
   }
 }
 
@@ -539,6 +539,35 @@ translations.english.addPermutations = 'Add Permutations (R)'
 translations.english.permutationHint = 'Permutation numbers'
 translations.myanmar.addPermutations = 'ပြောင်းလဲမှုများ ထည့်ရန် (R)'
 translations.myanmar.permutationHint = 'ပြောင်းလဲ နံပါတ်များ'
+
+// Soccer bet details translations
+translations.english.betDetails = 'Bet Details'
+translations.english.betAmount = 'Bet Amount'
+translations.english.winAmount = 'Win Amount'
+translations.english.bawdi = 'Bawdi'
+translations.english.maung = 'Maung'
+translations.english.homeTeam = 'Home'
+translations.english.awayTeam = 'Away'
+translations.english.overGoal = 'Over'
+translations.english.underGoal = 'Under'
+translations.english.football = 'Football'
+translations.english.back = 'Back'
+translations.english.betNotFound = 'Bet not found'
+translations.english.kyat = 'MMK'
+
+translations.myanmar.betDetails = 'လောင်းကြေး အသေးစိတ်'
+translations.myanmar.betAmount = 'လောင်းငွေ'
+translations.myanmar.winAmount = 'အနိုင်ရငွေ'
+translations.myanmar.bawdi = 'ဘော်ဒီ'
+translations.myanmar.maung = 'မောင်း'
+translations.myanmar.homeTeam = 'အိမ်ကွင်း'
+translations.myanmar.awayTeam = 'အဝေးကွင်း'
+translations.myanmar.overGoal = 'ဂိုးပေါ်'
+translations.myanmar.underGoal = 'ဂိုးအောက်'
+translations.myanmar.football = 'ဘောလုံး'
+translations.myanmar.back = 'နောက်သို့'
+translations.myanmar.betNotFound = 'လောင်းကြေး မတွေ့ပါ'
+translations.myanmar.kyat = 'ကျပ်'
 
 export const useLanguage = () => {
   const t = (key) => {

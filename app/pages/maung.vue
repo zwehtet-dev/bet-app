@@ -55,26 +55,49 @@
           </div>
         </div>
 
-        <div v-if="match.gp" class="text-center mb-3">
-          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
+        <!-- Home/Away betting row -->
+        <div class="flex items-center gap-2 mb-2">
           <button 
             @click="toggleSelection(match, 'home')" 
             :disabled="!match.betOpen"
-            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation', 
-              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
-              isSelected(match.id, 'home') ? 'bg-orange-500' : 'bg-white/10']">
-            Home
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border', 
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'home') ? 'bg-orange-500 border-orange-500' : 'bg-white/10 border-white/20']">
+            အိမ်ကွင်း
           </button>
+          <div class="text-xs text-amber-400 font-bold min-w-[60px] text-center">
+            {{ match.homeBet || '0' }}
+          </div>
           <button 
             @click="toggleSelection(match, 'away')" 
             :disabled="!match.betOpen"
-            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation',
-              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
-              isSelected(match.id, 'away') ? 'bg-orange-500' : 'bg-white/10']">
-            Away
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'away') ? 'bg-orange-500 border-orange-500' : 'bg-white/10 border-white/20']">
+            အဝေးကွင်း
+          </button>
+        </div>
+
+        <!-- Over/Under betting row -->
+        <div class="flex items-center gap-2">
+          <button 
+            @click="toggleSelection(match, 'over')" 
+            :disabled="!match.betOpen"
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border', 
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'over') ? 'bg-orange-500 border-orange-500' : 'bg-white/10 border-white/20']">
+            ဂိုးပေါ်
+          </button>
+          <div class="text-xs text-amber-400 font-bold min-w-[60px] text-center">
+            {{ match.gp || '0' }}
+          </div>
+          <button 
+            @click="toggleSelection(match, 'under')" 
+            :disabled="!match.betOpen"
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'under') ? 'bg-orange-500 border-orange-500' : 'bg-white/10 border-white/20']">
+            ဂိုးအောက်
           </button>
         </div>
       </div>
@@ -96,9 +119,9 @@
           <button @click="selectedBets = []" class="text-[10px] text-red-400 touch-manipulation">Clear All</button>
         </div>
         <div class="flex flex-wrap gap-1 mb-4 max-h-20 overflow-y-auto">
-          <span v-for="bet in selectedBets" :key="bet.matchId" class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-1 rounded flex items-center gap-1">
-            {{ getTeamName(bet.match.homeTeam).slice(0, 3) }} vs {{ getTeamName(bet.match.awayTeam).slice(0, 3) }} ({{ bet.type }})
-            <button @click="removeBet(bet.matchId)" class="text-white/60 hover:text-white touch-manipulation">×</button>
+          <span v-for="bet in selectedBets" :key="`${bet.matchId}-${bet.type}`" class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-1 rounded flex items-center gap-1">
+            {{ getTeamName(bet.match.homeTeam).slice(0, 3) }} vs {{ getTeamName(bet.match.awayTeam).slice(0, 3) }} ({{ getBetTypeLabel(bet.type) }})
+            <button @click="removeBet(bet.matchId, bet.type)" class="text-white/60 hover:text-white touch-manipulation">×</button>
           </span>
         </div>
         
@@ -165,6 +188,16 @@ const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const formatMatchDate = (ms) => ms ? new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
+const getBetTypeLabel = (type) => {
+  switch (type) {
+    case 'home': return 'အိမ်'
+    case 'away': return 'အဝေး'
+    case 'over': return 'ပေါ်'
+    case 'under': return 'အောက်'
+    default: return type
+  }
+}
+
 const getStatusColor = (status) => {
   switch (status) {
     case 'On_Progress': return 'bg-green-500/20 text-green-400'
@@ -200,29 +233,49 @@ const toggleSelection = (match, type) => {
     return
   }
   
-  const existingIndex = selectedBets.value.findIndex(b => b.matchId === match.id)
+  // Determine bet category: 'team' for home/away, 'goal' for over/under
+  const isTeamBet = type === 'home' || type === 'away'
+  const isGoalBet = type === 'over' || type === 'under'
+  
+  // Find existing bet of the same category for this match
+  const existingIndex = selectedBets.value.findIndex(b => {
+    if (b.matchId !== match.id) return false
+    const existingIsTeamBet = b.type === 'home' || b.type === 'away'
+    const existingIsGoalBet = b.type === 'over' || b.type === 'under'
+    return (isTeamBet && existingIsTeamBet) || (isGoalBet && existingIsGoalBet)
+  })
   
   if (existingIndex > -1) {
     if (selectedBets.value[existingIndex].type === type) {
+      // Same type clicked - remove the bet
       selectedBets.value.splice(existingIndex, 1)
     } else {
+      // Different type in same category - update the bet
       selectedBets.value[existingIndex].type = type
-      selectedBets.value[existingIndex].betTeamId = type === 'home' ? match.homeTeamId : match.awayTeamId
+      if (isTeamBet) {
+        selectedBets.value[existingIndex].betTeamId = type === 'home' ? match.homeTeamId : match.awayTeamId
+        selectedBets.value[existingIndex].betUnder = false
+      } else {
+        selectedBets.value[existingIndex].betTeamId = null
+        selectedBets.value[existingIndex].betUnder = type === 'under'
+      }
     }
   } else {
+    // Add new bet
     selectedBets.value.push({
       matchId: match.id,
       gameId: match.id,
       type,
-      betTeamId: type === 'home' ? match.homeTeamId : match.awayTeamId,
-      betUnder: false,
+      betTeamId: isTeamBet ? (type === 'home' ? match.homeTeamId : match.awayTeamId) : null,
+      betUnder: isGoalBet ? (type === 'under') : false,
+      isOverUnder: isGoalBet,
       match
     })
   }
 }
 
-const removeBet = (matchId) => {
-  const index = selectedBets.value.findIndex(b => b.matchId === matchId)
+const removeBet = (matchId, type) => {
+  const index = selectedBets.value.findIndex(b => b.matchId === matchId && b.type === type)
   if (index > -1) selectedBets.value.splice(index, 1)
 }
 

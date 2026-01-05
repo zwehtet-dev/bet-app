@@ -209,32 +209,43 @@ export const useSoccerBetting = () => {
       if (response.msgState === 'data') {
         const bets = response.data || []
         
-        soccerBetHistory.value = bets.map(bet => ({
-          id: bet.id,
-          token: bet.token,
-          gameType: bet.gameType || bet.soccerType,
-          status: mapSoccerBetStatus(bet.status),
-          amount: bet.amount,
-          totalAmount: bet.totalAmount || bet.amount,
-          winAmount: bet.winAmount || 0,
-          createdAt: bet.createdDateInMilliSeconds ? new Date(bet.createdDateInMilliSeconds).toISOString() : null,
-          soccerBetDetails: (bet.soccerBetDetails || []).map(detail => ({
-            ...detail,
-            homeTeamName: detail.homeTeamName || detail.homeTeam?.nameInMM || detail.homeTeam?.nameInEng || 'Home',
-            awayTeamName: detail.awayTeamName || detail.awayTeam?.nameInMM || detail.awayTeam?.nameInEng || 'Away',
-            matchDisplay: detail.homeTeamName && detail.awayTeamName 
-              ? `${detail.homeTeamName} vs ${detail.awayTeamName}`
-              : detail.gameId ? `Match #${detail.gameId}` : 'Football Match',
-            betTypeDisplay: getBetTypeDisplayText(detail),
-            gameId: detail.gameId,
-            betTeamId: detail.betTeamId,
-            betUnder: detail.betUnder,
-            amount: detail.amount,
-            isWin: detail.isWin,
-            homeTeamId: detail.homeTeamId,
-            awayTeamId: detail.awayTeamId
-          }))
-        }))
+        soccerBetHistory.value = bets.map(bet => {
+          // Calculate win amount from soccerBetDetails payAmount (for Bawdi)
+          // For Bawdi: sum of all payAmount from details
+          // For Maung: no individual payAmount, win is all or nothing
+          let calculatedWinAmount = 0
+          if (bet.gameType === 'Body' && bet.soccerBetDetails) {
+            calculatedWinAmount = bet.soccerBetDetails.reduce((sum, detail) => sum + (detail.payAmount || 0), 0)
+          }
+          
+          return {
+            id: bet.id,
+            token: bet.token,
+            gameType: bet.gameType || bet.soccerType,
+            status: mapSoccerBetStatus(bet.status),
+            amount: bet.amount,
+            totalAmount: bet.totalAmount || bet.amount,
+            winAmount: calculatedWinAmount,
+            createdAt: bet.createdDateInMilliSeconds ? new Date(bet.createdDateInMilliSeconds).toISOString() : null,
+            soccerBetDetails: (bet.soccerBetDetails || []).map(detail => ({
+              ...detail,
+              homeTeamName: detail.homeTeamName || detail.homeTeam?.nameInMM || detail.homeTeam?.nameInEng || 'Home',
+              awayTeamName: detail.awayTeamName || detail.awayTeam?.nameInMM || detail.awayTeam?.nameInEng || 'Away',
+              matchDisplay: detail.homeTeamName && detail.awayTeamName 
+                ? `${detail.homeTeamName} vs ${detail.awayTeamName}`
+                : detail.gameId ? `Match #${detail.gameId}` : 'Football Match',
+              betTypeDisplay: getBetTypeDisplayText(detail),
+              gameId: detail.gameId,
+              betTeamId: detail.betTeamId,
+              betUnder: detail.betUnder,
+              amount: detail.amount,
+              payAmount: detail.payAmount,
+              isWin: detail.isWin,
+              homeTeamId: detail.homeTeamId,
+              awayTeamId: detail.awayTeamId
+            }))
+          }
+        })
         
         return { success: true, data: soccerBetHistory.value }
       }

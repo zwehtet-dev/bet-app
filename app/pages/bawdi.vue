@@ -46,48 +46,71 @@
         <div class="flex items-center justify-between mb-4">
           <div class="flex-1 text-center">
             <p class="text-sm font-bold">{{ match.homeTeam?.nameInMM || match.homeTeam?.nameInEng || 'Home Team' }}</p>
-            <p v-if="match.homeBet" class="text-[10px] text-amber-400">{{ match.homeBet }}</p>
           </div>
           <div class="px-4"><span class="text-xs text-white/40">VS</span></div>
           <div class="flex-1 text-center">
             <p class="text-sm font-bold">{{ match.awayTeam?.nameInMM || match.awayTeam?.nameInEng || 'Away Team' }}</p>
-            <p v-if="match.awayBet" class="text-[10px] text-amber-400">{{ match.awayBet }}</p>
           </div>
         </div>
 
-        <div v-if="match.gp" class="text-center mb-3">
-          <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">GP: {{ match.gp }}</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 mb-3">
+        <!-- Home/Away betting row -->
+        <div class="flex items-center gap-2 mb-2">
           <button 
             @click="selectBet(match, 'home')" 
             :disabled="!match.betOpen"
-            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation',
-              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
-              isSelected(match.id, 'home') ? 'bg-green-500' : 'bg-white/10']">
-            Home
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'home') ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20']">
+            အိမ်ကွင်း
           </button>
+          <div class="text-xs text-amber-400 font-bold min-w-[60px] text-center">
+            {{ match.homeBet || '0' }}
+          </div>
           <button 
             @click="selectBet(match, 'away')" 
             :disabled="!match.betOpen"
-            :class="['py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation',
-              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed' :
-              isSelected(match.id, 'away') ? 'bg-green-500' : 'bg-white/10']">
-            Away
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'away') ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20']">
+            အဝေးကွင်း
+          </button>
+        </div>
+
+        <!-- Over/Under betting row -->
+        <div class="flex items-center gap-2 mb-3">
+          <button 
+            @click="selectBet(match, 'over')" 
+            :disabled="!match.betOpen"
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'over') ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20']">
+            ဂိုးပေါ်
+          </button>
+          <div class="text-xs text-amber-400 font-bold min-w-[60px] text-center">
+            {{ match.gp || '0' }}
+          </div>
+          <button 
+            @click="selectBet(match, 'under')" 
+            :disabled="!match.betOpen"
+            :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation border',
+              !match.betOpen ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-600' :
+              isSelected(match.id, 'under') ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20']">
+            ဂိုးအောက်
           </button>
         </div>
 
         <!-- Amount input for selected match -->
-        <div v-if="getSelectedBet(match.id)" class="flex items-center gap-2">
-          <span class="text-[10px] text-white/40">Amount:</span>
-          <input 
-            v-model.number="getSelectedBet(match.id).amount" 
-            type="number" 
-            min="100"
-            inputmode="numeric"
-            :disabled="!match.betOpen"
-            class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-sm text-center border border-white/10 focus:border-green-500 focus:outline-none disabled:bg-gray-600 disabled:text-gray-400">
+        <div v-if="getSelectedBet(match.id).length" class="space-y-2 mt-3">
+          <div v-for="bet in getSelectedBet(match.id)" :key="bet.type" class="flex items-center gap-2">
+            <span class="text-[10px] text-white/40 min-w-[60px]">{{ getBetTypeLabel(bet.type) }}:</span>
+            <input 
+              v-model.number="bet.amount" 
+              type="number" 
+              min="100"
+              inputmode="numeric"
+              :disabled="!match.betOpen"
+              class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-sm text-center border border-white/10 focus:border-green-500 focus:outline-none disabled:bg-gray-600 disabled:text-gray-400">
+          </div>
         </div>
       </div>
 
@@ -160,6 +183,16 @@ const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const formatMatchDate = (ms) => ms ? new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
+const getBetTypeLabel = (type) => {
+  switch (type) {
+    case 'home': return 'အိမ်ကွင်း'
+    case 'away': return 'အဝေးကွင်း'
+    case 'over': return 'ဂိုးပေါ်'
+    case 'under': return 'ဂိုးအောက်'
+    default: return type
+  }
+}
+
 const getStatusColor = (status) => {
   switch (status) {
     case 'On_Progress': return 'bg-green-500/20 text-green-400'
@@ -177,7 +210,7 @@ const getStatusText = (status) => {
 }
 
 const isSelected = (matchId, type) => selectedBets.value.some(b => b.matchId === matchId && b.type === type)
-const getSelectedBet = (matchId) => selectedBets.value.find(b => b.matchId === matchId)
+const getSelectedBet = (matchId) => selectedBets.value.filter(b => b.matchId === matchId)
 
 const selectBet = (match, type) => {
   if (!match.betOpen) {
@@ -185,22 +218,42 @@ const selectBet = (match, type) => {
     return
   }
   
-  const existingIndex = selectedBets.value.findIndex(b => b.matchId === match.id)
+  // Determine bet category: 'team' for home/away, 'goal' for over/under
+  const isTeamBet = type === 'home' || type === 'away'
+  const isGoalBet = type === 'over' || type === 'under'
+  
+  // Find existing bet of the same category for this match
+  const existingIndex = selectedBets.value.findIndex(b => {
+    if (b.matchId !== match.id) return false
+    const existingIsTeamBet = b.type === 'home' || b.type === 'away'
+    const existingIsGoalBet = b.type === 'over' || b.type === 'under'
+    return (isTeamBet && existingIsTeamBet) || (isGoalBet && existingIsGoalBet)
+  })
   
   if (existingIndex > -1) {
     if (selectedBets.value[existingIndex].type === type) {
+      // Same type clicked - remove the bet
       selectedBets.value.splice(existingIndex, 1)
     } else {
+      // Different type in same category - update the bet
       selectedBets.value[existingIndex].type = type
-      selectedBets.value[existingIndex].betTeamId = type === 'home' ? match.homeTeamId : match.awayTeamId
+      if (isTeamBet) {
+        selectedBets.value[existingIndex].betTeamId = type === 'home' ? match.homeTeamId : match.awayTeamId
+        selectedBets.value[existingIndex].betUnder = false
+      } else {
+        selectedBets.value[existingIndex].betTeamId = null
+        selectedBets.value[existingIndex].betUnder = type === 'under'
+      }
     }
   } else {
+    // Add new bet
     selectedBets.value.push({
       matchId: match.id,
       gameId: match.id,
       type,
-      betTeamId: type === 'home' ? match.homeTeamId : match.awayTeamId,
-      betUnder: false,
+      betTeamId: isTeamBet ? (type === 'home' ? match.homeTeamId : match.awayTeamId) : null,
+      betUnder: isGoalBet ? (type === 'under') : false,
+      isOverUnder: isGoalBet,
       amount: 1000,
       match
     })

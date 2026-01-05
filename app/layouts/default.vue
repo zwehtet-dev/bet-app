@@ -18,11 +18,12 @@ const pageConfig: Record<string, { title: string; color: string }> = {
   'wallet': { title: 'wallet', color: 'green' },
   'history': { title: 'betHistory', color: 'purple' },
   'profile': { title: 'profile', color: 'blue' },
-  'results': { title: 'results', color: 'amber' }
+  'results': { title: 'results', color: 'amber' },
+  'soccer-bet-details': { title: 'betDetails', color: 'green' }
 }
 
 const currentPage = computed(() => pageConfig[route.name as string] || { title: 'App', color: 'amber' })
-const isMainPage = computed(() => ['index', 'wallet', 'history', 'profile'].includes(route.name as string))
+const isMainPage = computed(() => ['index', 'wallet', 'history', 'profile', 'soccer-bet-details'].includes(route.name as string))
 
 const navItems = [
   { name: 'index', path: '/', icon: 'home', label: 'home', color: 'blue' },
