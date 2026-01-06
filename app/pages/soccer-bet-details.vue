@@ -75,29 +75,29 @@
           </span>
         </div>
         
+        <!-- Clickable Team Names showing selection -->
         <div class="flex items-center justify-between mb-4">
-          <p class="flex-1 text-sm font-bold text-center">{{ detail.game?.homeTeam?.nameInMM || detail.game?.homeTeam?.nameInEng }}</p>
+          <div :class="['flex-1 text-center py-2 rounded-lg border transition-colors',
+            isHomeSelected(detail) ? 'bg-green-500/20 border-green-500' : 'border-transparent']">
+            <p class="text-sm font-bold">{{ detail.game?.homeTeam?.nameInMM || detail.game?.homeTeam?.nameInEng }}</p>
+            <p class="text-[10px] text-amber-400">{{ detail.game?.homeBet || '0' }}</p>
+          </div>
           <span class="px-3 text-xs text-white/40">VS</span>
-          <p class="flex-1 text-sm font-bold text-center">{{ detail.game?.awayTeam?.nameInMM || detail.game?.awayTeam?.nameInEng }}</p>
-        </div>
-
-        <div class="flex items-center gap-2 mb-2">
-          <div :class="['flex-1 py-2 rounded-lg text-xs font-bold text-center border', isHomeSelected(detail) ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20 text-white/50']">
-            {{ t('homeTeam') }}
-          </div>
-          <div class="text-xs text-amber-400 font-bold min-w-[50px] text-center">{{ detail.game?.homeBet || '0' }}</div>
-          <div :class="['flex-1 py-2 rounded-lg text-xs font-bold text-center border', isAwaySelected(detail) ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20 text-white/50']">
-            {{ t('awayTeam') }}
+          <div :class="['flex-1 text-center py-2 rounded-lg border transition-colors',
+            isAwaySelected(detail) ? 'bg-green-500/20 border-green-500' : 'border-transparent']">
+            <p class="text-sm font-bold">{{ detail.game?.awayTeam?.nameInMM || detail.game?.awayTeam?.nameInEng }}</p>
+            <p class="text-[10px] text-amber-400">{{ detail.game?.homeBet || '0' }}</p>
           </div>
         </div>
 
+        <!-- Over/Under selection display -->
         <div class="flex items-center gap-2">
           <div :class="['flex-1 py-2 rounded-lg text-xs font-bold text-center border', isOverSelected(detail) ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20 text-white/50']">
-            {{ t('overGoal') }}
+            ဂိုးပေါ်
           </div>
           <div class="text-xs text-amber-400 font-bold min-w-[50px] text-center">{{ detail.game?.gp || '0' }}</div>
           <div :class="['flex-1 py-2 rounded-lg text-xs font-bold text-center border', isUnderSelected(detail) ? 'bg-green-500 border-green-500' : 'bg-white/10 border-white/20 text-white/50']">
-            {{ t('underGoal') }}
+            ဂိုးအောက်
           </div>
         </div>
 
@@ -150,10 +150,14 @@ const totalWinAmount = computed(() => {
   return bet.value.soccerBetDetails.reduce((sum, d) => sum + (d.payAmount || 0), 0)
 })
 
-const isHomeSelected = (detail) => detail.betTeamId && detail.betTeamId === detail.game?.homeTeamId && !detail.betUnder
-const isAwaySelected = (detail) => detail.betTeamId && detail.betTeamId === detail.game?.awayTeamId && !detail.betUnder
-const isOverSelected = (detail) => !detail.betTeamId && detail.betUnder === false
-const isUnderSelected = (detail) => detail.betUnder === true
+// API Logic:
+// - betUnder = false: Team bet (home/away based on betTeamId)
+// - betUnder = true + betTeamId = homeTeamId: Over bet
+// - betUnder = true + betTeamId = awayTeamId: Under bet
+const isHomeSelected = (detail) => !detail.betUnder && detail.betTeamId === detail.game?.homeTeamId
+const isAwaySelected = (detail) => !detail.betUnder && detail.betTeamId === detail.game?.awayTeamId
+const isOverSelected = (detail) => detail.betUnder && detail.betTeamId === detail.game?.homeTeamId
+const isUnderSelected = (detail) => detail.betUnder && detail.betTeamId === detail.game?.awayTeamId
 
 const goBack = () => router.push('/history')
 

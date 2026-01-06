@@ -5,7 +5,12 @@ import { useAuth } from '~/composables/useAuth'
 
 const route = useRoute()
 const { t } = useLanguage()
-const { userBalance, userName, isLoggedIn } = useAuth()
+const { userBalance, userName, isLoggedIn, initAuth, authInitialized } = useAuth()
+
+// Initialize auth on layout mount
+onMounted(() => {
+  initAuth()
+})
 
 const formatBalance = (balance: number) => new Intl.NumberFormat('en-US').format(balance || 0)
 
@@ -64,7 +69,10 @@ const navItems = [
             </div>
           </div>
           <ClientOnly>
-            <div v-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
+            <div v-if="!authInitialized" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
+              <div class="h-5 w-16 bg-white/10 rounded animate-pulse"></div>
+            </div>
+            <div v-else-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
               <p class="text-sm font-black text-amber-400">{{ formatBalance(userBalance) }} <span class="text-xs text-gray-400">{{ t('mmk') }}</span></p>
             </div>
             <NuxtLink v-else to="/login" class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl px-4 py-2 border border-amber-500/20 text-sm font-bold text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-transform touch-manipulation">
