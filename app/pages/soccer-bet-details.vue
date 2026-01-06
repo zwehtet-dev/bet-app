@@ -148,7 +148,14 @@ const getStatusText = (status) => {
 }
 
 const totalWinAmount = computed(() => {
-  if (!bet.value?.soccerBetDetails) return 0
+  if (!bet.value) return 0
+  // Maung: payAmount is at root level
+  // Bawdi: payAmount is in each soccerBetDetails item
+  if (bet.value.gameType === 'Maung') {
+    return bet.value.payAmount || 0
+  }
+  // Bawdi - sum from details
+  if (!bet.value.soccerBetDetails) return 0
   return bet.value.soccerBetDetails.reduce((sum, d) => sum + (d.payAmount || 0), 0)
 })
 
