@@ -195,7 +195,8 @@ const checkLive2DAvailability = () => {
   const myanmarTime = new Date(now.getTime() + (myanmarOffset + utcOffset) * 60 * 1000)
   const day = myanmarTime.getDay()
   const hour = myanmarTime.getHours()
-  isLive2DOpen.value = day >= 1 && day <= 5 && hour >= 10 && hour < 22
+  const minute = myanmarTime.getMinutes()
+  isLive2DOpen.value = day >= 1 && day <= 5 && hour >= 10 && ( hour < 16 || minute < 30)
 }
 
 const updateResults = async () => {

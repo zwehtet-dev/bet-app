@@ -1,7 +1,7 @@
 <template>
   <div class="text-white">
     <!-- Timer Section -->
-    <div class="px-4 py-3">
+    <!-- <div class="px-4 py-3">
       <div class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl p-4 border border-blue-500/20">
         <div class="flex items-center justify-between">
           <div>
@@ -15,7 +15,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Selected Numbers -->
     <div class="px-4 py-2">

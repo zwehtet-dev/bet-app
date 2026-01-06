@@ -76,17 +76,19 @@
         </div>
         
         <!-- Clickable Team Names showing selection -->
-        <div class="flex items-center justify-between mb-4">
-          <div :class="['flex-1 text-center py-2 rounded-lg border transition-colors',
-            isHomeSelected(detail) ? 'bg-green-500/20 border-green-500' : 'border-transparent']">
-            <p class="text-sm font-bold">{{ detail.game?.homeTeam?.nameInMM || detail.game?.homeTeam?.nameInEng }}</p>
-            <p class="text-[10px] text-amber-400">{{ detail.game?.homeBet || '0' }}</p>
+        <div class="flex items-stretch gap-2 mb-4">
+          <div :class="['flex-1 flex flex-col items-center justify-center py-3 rounded-lg border transition-colors min-h-[60px] relative',
+            isHomeSelected(detail) ? 'bg-green-500/20 border-green-500' : 'border-white/10']">
+            <span v-if="detail.game?.homeBet" class="absolute -top-2 -right-2 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ detail.game?.homeBet }}</span>
+            <p class="text-sm font-bold text-center leading-tight">{{ detail.game?.homeTeam?.nameInMM || detail.game?.homeTeam?.nameInEng }}</p>
           </div>
-          <span class="px-3 text-xs text-white/40">VS</span>
-          <div :class="['flex-1 text-center py-2 rounded-lg border transition-colors',
-            isAwaySelected(detail) ? 'bg-green-500/20 border-green-500' : 'border-transparent']">
-            <p class="text-sm font-bold">{{ detail.game?.awayTeam?.nameInMM || detail.game?.awayTeam?.nameInEng }}</p>
-            <p class="text-[10px] text-amber-400">{{ detail.game?.homeBet || '0' }}</p>
+          <div class="flex items-center justify-center px-2">
+            <span class="text-xs text-white/40">VS</span>
+          </div>
+          <div :class="['flex-1 flex flex-col items-center justify-center py-3 rounded-lg border transition-colors min-h-[60px] relative',
+            isAwaySelected(detail) ? 'bg-green-500/20 border-green-500' : 'border-white/10']">
+            <span v-if="detail.game?.awayBet" class="absolute -top-2 -left-2 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ detail.game?.awayBet }}</span>
+            <p class="text-sm font-bold text-center leading-tight">{{ detail.game?.awayTeam?.nameInMM || detail.game?.awayTeam?.nameInEng }}</p>
           </div>
         </div>
 

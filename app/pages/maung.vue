@@ -44,25 +44,27 @@
         </div>
         
         <!-- Clickable Team Names for Home/Away selection -->
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-stretch gap-2 mb-4">
           <button 
             @click="toggleSelection(match, 'home')" 
             :disabled="!match.betOpen"
-            :class="['flex-1 text-center py-2 rounded-lg transition-colors active:scale-95 touch-manipulation border',
+            :class="['flex-1 flex flex-col items-center justify-center py-3 rounded-lg transition-colors active:scale-95 touch-manipulation border min-h-[60px] relative',
               !match.betOpen ? 'cursor-not-allowed opacity-50' :
-              isSelected(match.id, 'home') ? 'bg-orange-500/20 border-orange-500' : 'border-transparent hover:bg-white/5']">
-            <p class="text-sm font-bold">{{ match.homeTeam?.nameInMM || match.homeTeam?.nameInEng || 'Home Team' }}</p>
-            <p class="text-[10px] text-amber-400">{{ match.homeBet || '0' }}</p>
+              isSelected(match.id, 'home') ? 'bg-orange-500/20 border-orange-500' : 'border-white/10 hover:bg-white/5']">
+            <span v-if="match.homeBet" class="absolute -top-2 -right-2 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ match.homeBet }}</span>
+            <p class="text-sm font-bold text-center leading-tight">{{ match.homeTeam?.nameInMM || match.homeTeam?.nameInEng || 'Home Team' }}</p>
           </button>
-          <div class="px-4"><span class="text-xs text-white/40">VS</span></div>
+          <div class="flex items-center justify-center px-2">
+            <span class="text-xs text-white/40">VS</span>
+          </div>
           <button 
             @click="toggleSelection(match, 'away')" 
             :disabled="!match.betOpen"
-            :class="['flex-1 text-center py-2 rounded-lg transition-colors active:scale-95 touch-manipulation border',
+            :class="['flex-1 flex flex-col items-center justify-center py-3 rounded-lg transition-colors active:scale-95 touch-manipulation border min-h-[60px] relative',
               !match.betOpen ? 'cursor-not-allowed opacity-50' :
-              isSelected(match.id, 'away') ? 'bg-orange-500/20 border-orange-500' : 'border-transparent hover:bg-white/5']">
-            <p class="text-sm font-bold">{{ match.awayTeam?.nameInMM || match.awayTeam?.nameInEng || 'Away Team' }}</p>
-            <p class="text-[10px] text-amber-400">{{ match.awayBet || '0' }}</p>
+              isSelected(match.id, 'away') ? 'bg-orange-500/20 border-orange-500' : 'border-white/10 hover:bg-white/5']">
+            <span v-if="match.awayBet" class="absolute -top-2 -left-2 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ match.awayBet }}</span>
+            <p class="text-sm font-bold text-center leading-tight">{{ match.awayTeam?.nameInMM || match.awayTeam?.nameInEng || 'Away Team' }}</p>
           </button>
         </div>
 

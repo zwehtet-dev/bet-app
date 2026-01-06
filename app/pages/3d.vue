@@ -1,6 +1,6 @@
 <template>
   <div class="text-white">
-    <div class="px-4 py-3">
+    <!-- <div class="px-4 py-3">
       <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-500/20">
         <div class="flex items-center justify-between">
           <div>
@@ -14,7 +14,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <div class="px-4 py-2">
       <div class="bg-white/5 rounded-xl p-1 flex gap-1 border border-white/5">
