@@ -1,52 +1,45 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { useLanguage } from '~/composables/useLanguage'
-import { useAuth } from '~/composables/useAuth'
+import { ref, computed } from 'vue'
 
 const route = useRoute()
-const { t } = useLanguage()
-const { userBalance, userName, isLoggedIn, initAuth, authInitialized } = useAuth()
-
-// Initialize auth on layout mount
-onMounted(() => {
-  initAuth()
-})
+const demoBalance = ref(500000)
+const demoUserName = ref('Demo User')
+const isLoggedIn = ref(true)
 
 const formatBalance = (balance: number) => new Intl.NumberFormat('en-US').format(balance || 0)
 
 const pageConfig: Record<string, { title: string; color: string }> = {
-  'index': { title: 'home', color: 'amber' },
-  '2d': { title: '2dBetting', color: 'blue' },
-  '3d': { title: '3dBetting', color: 'purple' },
-  'bawdi': { title: 'bawdiBetting', color: 'green' },
-  'maung': { title: 'maungBetting', color: 'orange' },
-  'wallet': { title: 'wallet', color: 'green' },
-  'history': { title: 'betHistory', color: 'purple' },
-  'profile': { title: 'profile', color: 'blue' },
-  'results': { title: 'results', color: 'amber' },
-  'soccer-bet-details': { title: 'betDetails', color: 'green' }
+  'index': { title: 'Home', color: 'amber' },
+  '2d': { title: '2D Betting', color: 'blue' },
+  '3d': { title: '3D Betting', color: 'purple' },
+  'bawdi': { title: 'Bawdi Betting', color: 'green' },
+  'maung': { title: 'Maung Betting', color: 'orange' },
+  'wallet': { title: 'Wallet', color: 'green' },
+  'history': { title: 'Bet History', color: 'purple' },
+  'profile': { title: 'Profile', color: 'blue' },
+  'results': { title: 'Results', color: 'amber' },
+  'soccer-bet-details': { title: 'Bet Details', color: 'green' }
 }
 
 const currentPage = computed(() => pageConfig[route.name as string] || { title: 'App', color: 'amber' })
 const isMainPage = computed(() => ['index', 'wallet', 'history', 'profile', 'soccer-bet-details'].includes(route.name as string))
 
 const navItems = [
-  { name: 'index', path: '/', icon: 'home', label: 'home', color: 'blue' },
-  { name: 'wallet', path: '/wallet', icon: 'wallet', label: 'wallet', color: 'green' },
-  { name: 'history', path: '/history', icon: 'history', label: 'history', color: 'purple' },
-  { name: 'profile', path: '/profile', icon: 'profile', label: 'profile', color: 'orange' }
+  { name: 'index', path: '/', icon: 'home', label: 'Home', color: 'blue' },
+  { name: 'wallet', path: '/wallet', icon: 'wallet', label: 'Wallet', color: 'green' },
+  { name: 'history', path: '/history', icon: 'history', label: 'History', color: 'purple' },
+  { name: 'profile', path: '/profile', icon: 'profile', label: 'Profile', color: 'orange' }
 ]
 </script>
 
 <template>
   <div class="min-h-screen min-h-[100dvh] flex items-center justify-center">
     <div class="w-full min-h-screen min-h-[100dvh] max-w-[430px] relative mx-auto flex flex-col bg-cover bg-center bg-fixed" 
-         style="background-image: url('/images/bg-10.jpeg');">
-      <!-- Overlay -->
+         style="background-image: url('/images/bg-1.jpeg');">
       <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/90 pointer-events-none"></div>
       
-      <!-- Header -->
-      <header class="sticky top-0 z-30 bg-black/60 backdrop-blur-xl border-b border-white/5 flex-shrink-0 pt-2" style="contain: layout style;">
+      <header class="sticky top-0 z-30 bg-black/60 backdrop-blur-xl border-b border-white/5 flex-shrink-0 pt-2">
         <div class="px-4 py-3 flex items-center justify-between safe-area-top">
           <div class="flex items-center gap-3">
             <NuxtLink v-if="!isMainPage" to="/" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors active:scale-95 touch-manipulation">
@@ -55,44 +48,23 @@ const navItems = [
               </svg>
             </NuxtLink>
             <div v-else class="w-9 h-9 rounded-xl overflow-hidden shadow-lg">
-              <img src="/images/logo.jpg" alt="Logo" class="w-full h-full object-cover" loading="eager" fetchpriority="high">
+              <img src="/images/logo.jpg" alt="Logo" class="w-full h-full object-cover">
             </div>
             <div>
-              <h1 class="text-[15px] font-bold text-white">{{ t(currentPage.title) }}</h1>
-              <ClientOnly>
-                <p v-if="isLoggedIn && userName && isMainPage" class="text-[10px] text-white/40">Welcome back!</p>
-                <p v-else-if="!isLoggedIn && isMainPage" class="text-[10px] text-white/40">Please sign in</p>
-                <template #fallback>
-                  <p v-if="isMainPage" class="text-[10px] text-white/40">&nbsp;</p>
-                </template>
-              </ClientOnly>
+              <h1 class="text-[15px] font-bold text-white">{{ currentPage.title }}</h1>
+              <p v-if="isLoggedIn && isMainPage" class="text-[10px] text-white/40">Welcome back!</p>
             </div>
           </div>
-          <ClientOnly>
-            <div v-if="!authInitialized" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
-              <div class="h-5 w-16 bg-white/10 rounded animate-pulse"></div>
-            </div>
-            <div v-else-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
-              <p class="text-sm font-black text-amber-400">{{ formatBalance(userBalance) }} <span class="text-xs text-gray-400">{{ t('mmk') }}</span></p>
-            </div>
-            <NuxtLink v-else to="/login" class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl px-4 py-2 border border-amber-500/20 text-sm font-bold text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-transform touch-manipulation">
-              Login
-            </NuxtLink>
-            <template #fallback>
-              <div class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
-                <div class="h-5 w-16 bg-white/10 rounded animate-pulse"></div>
-              </div>
-            </template>
-          </ClientOnly>
+          <div v-if="isLoggedIn" class="bg-white/10 rounded-xl px-3 py-2 border border-white/5">
+            <p class="text-sm font-black text-amber-400">{{ formatBalance(demoBalance) }} <span class="text-xs text-gray-400">MMK</span></p>
+          </div>
         </div>
       </header>
       
-      <!-- Content -->
       <main class="relative z-10 flex-1 overflow-y-auto pb-[72px]" style="-webkit-overflow-scrolling: touch;">
         <slot />
       </main>
 
-      <!-- Bottom Nav -->
       <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-black/90 backdrop-blur-xl border-t border-white/5 z-40">
         <div class="flex items-center justify-around py-2 safe-area-bottom">
           <NuxtLink v-for="item in navItems" :key="item.name" :to="item.path" 
@@ -110,7 +82,7 @@ const navItems = [
             <svg v-if="item.icon === 'profile'" class="w-6 h-6 mb-0.5" :class="route.name === item.name ? `text-${item.color}-400` : 'text-white/35'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span class="text-[10px] font-semibold" :class="route.name === item.name ? `text-${item.color}-400` : 'text-white/35'">{{ t(item.label) }}</span>
+            <span class="text-[10px] font-semibold" :class="route.name === item.name ? `text-${item.color}-400` : 'text-white/35'">{{ item.label }}</span>
           </NuxtLink>
         </div>
       </nav>
@@ -124,9 +96,4 @@ const navItems = [
 .touch-manipulation { touch-action: manipulation; }
 @supports (backdrop-filter: blur(12px)) { .backdrop-blur-xl { backdrop-filter: blur(12px); } }
 @supports not (backdrop-filter: blur(12px)) { .backdrop-blur-xl { background-color: rgba(0, 0, 0, 0.95); } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
-@supports (-webkit-touch-callout: none) { .min-h-\[100dvh\] { min-height: -webkit-fill-available; } }
-/* Performance optimizations */
-main { contain: layout style; }
-header, nav { contain: layout style paint; }
 </style>

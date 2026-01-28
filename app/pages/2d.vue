@@ -1,28 +1,11 @@
 <template>
   <div class="text-white">
-    <!-- Timer Section -->
-    <!-- <div class="px-4 py-3">
-      <div class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl p-4 border border-blue-500/20">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-[10px] text-white/50">{{ isWeekend ? 'Reopens' : t('nextDraw') }}</p>
-            <p class="text-sm font-bold">{{ currentSession }}</p>
-            <p class="text-[10px] text-white/40">{{ sessionTime }}</p>
-          </div>
-          <div class="bg-blue-500/20 px-4 py-2 rounded-xl">
-            <p class="text-2xl font-black text-blue-400 font-mono" v-if="!isWeekend">{{ timer }}</p>
-            <p class="text-lg font-black text-blue-400" v-else>{{ weekendMessage }}</p>
-          </div>
-        </div>
-      </div>
-    </div> -->
-
     <!-- Selected Numbers -->
     <div class="px-4 py-2">
       <div class="bg-white/5 rounded-xl p-4 border border-white/5">
         <div class="flex items-center justify-between mb-3">
-          <p class="text-xs text-white/50">{{ t('selectedNumbers') }} <span class="text-blue-400">({{ selected.length }})</span></p>
-          <button v-if="selected.length" @click="selected = []" class="text-[10px] text-red-400 font-medium touch-manipulation">{{ t('clearAll') }}</button>
+          <p class="text-xs text-white/50">Selected Numbers <span class="text-blue-400">({{ selected.length }})</span></p>
+          <button v-if="selected.length" @click="selected = []" class="text-[10px] text-red-400 font-medium touch-manipulation">Clear All</button>
         </div>
         <div class="flex flex-wrap gap-1.5 min-h-[32px] max-h-24 overflow-y-auto">
           <span v-for="n in selected" :key="n" class="bg-blue-500 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">{{ n.toString().padStart(2, '0') }}<button @click="toggle(n)" class="text-white/60 hover:text-white touch-manipulation">×</button></span>
@@ -35,55 +18,9 @@
       </div>
     </div>
 
+    <!-- Number Grid -->
     <div class="px-4 py-2">
-      <button @click="showPatterns = !showPatterns" class="flex items-center gap-1 text-xs text-white/50 mb-2">{{ t('specialPatterns') }}<svg :class="['w-3 h-3 transition-transform', showPatterns && 'rotate-180']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></button>
-      
-      <div v-if="showPatterns" class="space-y-3">
-        <!-- Basic Patterns -->
-        <div>
-          <p class="text-[10px] text-white/40 mb-2">ပါတ် (Contains)</p>
-          <div class="flex flex-wrap gap-1">
-            <button v-for="p in patterns.filter(p => p.id.startsWith('pathee'))" :key="p.id" @click="applyPattern(p)" class="bg-white/5 hover:bg-purple-500/20 px-2 py-1 rounded text-[10px] font-medium border border-white/10 active:scale-95">{{ p.name }} <span class="text-white/40">({{ p.nums.length }})</span></button>
-          </div>
-        </div>
-        
-        <!-- First/Last Digit Patterns -->
-        <div>
-          <p class="text-[10px] text-white/40 mb-2">ထိပ်/ပိတ် (First/Last)</p>
-          <div class="flex flex-wrap gap-1">
-            <button v-for="p in patterns.filter(p => p.id.startsWith('htite') || p.id.startsWith('pate'))" :key="p.id" @click="applyPattern(p)" class="bg-white/5 hover:bg-blue-500/20 px-2 py-1 rounded text-[10px] font-medium border border-white/10 active:scale-95">{{ p.name }} <span class="text-white/40">({{ p.nums.length }})</span></button>
-          </div>
-        </div>
-        
-        <!-- Sum Patterns -->
-        <div>
-          <p class="text-[10px] text-white/40 mb-2">ဘရိတ် (Sum)</p>
-          <div class="flex flex-wrap gap-1">
-            <button v-for="p in patterns.filter(p => p.id.startsWith('brake'))" :key="p.id" @click="applyPattern(p)" class="bg-white/5 hover:bg-orange-500/20 px-2 py-1 rounded text-[10px] font-medium border border-white/10 active:scale-95">{{ p.name }} <span class="text-white/40">({{ p.nums.length }})</span></button>
-          </div>
-        </div>
-        
-        <!-- Collection Patterns -->
-        <div>
-          <p class="text-[10px] text-white/40 mb-2">စုစည်းမှု (Collections)</p>
-          <div class="flex flex-wrap gap-1">
-            <button v-for="p in patterns.filter(p => ['evenFirst', 'evenLast', 'oddFirst', 'oddLast', 'aPuu', 'evenEven', 'oddOdd', 'evenOdd', 'oddEven'].includes(p.id))" :key="p.id" @click="applyPattern(p)" class="bg-white/5 hover:bg-green-500/20 px-2 py-1 rounded text-[10px] font-medium border border-white/10 active:scale-95">{{ p.name }} <span class="text-white/40">({{ p.nums.length }})</span></button>
-          </div>
-        </div>
-        
-        <!-- Special Patterns -->
-        <div>
-          <p class="text-[10px] text-white/40 mb-2">အထူး (Special)</p>
-          <div class="flex flex-wrap gap-1">
-            <button v-for="p in patterns.filter(p => ['power', 'powerR', 'natKhat', 'natKhatR'].includes(p.id))" :key="p.id" @click="applyPattern(p)" class="bg-white/5 hover:bg-red-500/20 px-2 py-1 rounded text-[10px] font-medium border border-white/10 active:scale-95">{{ p.name }} <span class="text-white/40">({{ p.nums.length }})</span></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Number Grid - Optimized for mobile -->
-    <div class="px-4 py-2">
-      <div class="grid grid-cols-10 gap-1" style="contain: layout style;">
+      <div class="grid grid-cols-10 gap-1">
         <button 
           v-for="n in 100" 
           :key="n-1" 
@@ -99,11 +36,11 @@
     <!-- Amount Selection -->
     <div class="px-4 py-3">
       <div class="bg-white/5 rounded-xl p-4 border border-white/5">
-        <div class="flex items-center justify-between mb-3"><p class="text-xs text-white/50">{{ t('amountPerNumber') }}</p><p class="text-sm font-black text-amber-400">{{ formatBalance(amount) }} {{ t('mmk') }}</p></div>
+        <div class="flex items-center justify-between mb-3"><p class="text-xs text-white/50">Amount Per Number</p><p class="text-sm font-black text-amber-400">{{ formatBalance(amount) }} MMK</p></div>
         <div class="flex gap-2 mb-3"><button v-for="a in [100, 500, 1000, 5000]" :key="a" @click="amount = a" :class="['flex-1 py-2 rounded-lg text-xs font-bold transition-colors active:scale-95 touch-manipulation', amount === a ? 'bg-amber-500 text-black' : 'bg-white/5 text-white/60']">{{ formatBalance(a) }}</button></div>
         <div class="flex items-center gap-2">
           <button @click="amount = Math.max(100, amount - 100)" class="w-11 h-11 bg-red-500/20 text-red-400 rounded-xl text-lg font-bold active:scale-95 touch-manipulation">−</button>
-          <input v-model.number="amount" type="number" min="100" inputmode="numeric" class="flex-1 bg-white/5 rounded-xl px-3 py-2.5 text-center text-sm font-bold border border-white/10 focus:border-blue-500 focus:outline-none">
+          <input v-model.number="amount" type="number" min="100" class="flex-1 bg-white/5 rounded-xl px-3 py-2.5 text-center text-sm font-bold border border-white/10 focus:border-blue-500 focus:outline-none">
           <button @click="amount += 100" class="w-11 h-11 bg-green-500/20 text-green-400 rounded-xl text-lg font-bold active:scale-95 touch-manipulation">+</button>
         </div>
       </div>
@@ -112,10 +49,10 @@
     <!-- Bet Summary & Submit -->
     <div class="px-4 py-2 pb-6">
       <div class="bg-white/5 rounded-xl p-4 border border-white/5 mb-4">
-        <div class="flex justify-between text-sm mb-2"><span class="text-white/50">{{ t('totalBet') }}:</span><span class="font-black text-amber-400">{{ formatBalance(total) }} {{ t('mmk') }}</span></div>
-        <div class="flex justify-between text-sm"><span class="text-white/50">{{ t('potentialWin') }}:</span><span class="font-black text-green-400">{{ formatBalance(total * multiplier) }} {{ t('mmk') }}</span></div>
+        <div class="flex justify-between text-sm mb-2"><span class="text-white/50">Total Bet:</span><span class="font-black text-amber-400">{{ formatBalance(total) }} MMK</span></div>
+        <div class="flex justify-between text-sm"><span class="text-white/50">Potential Win:</span><span class="font-black text-green-400">{{ formatBalance(total * 85) }} MMK</span></div>
       </div>
-      <button @click="placeBetHandler" :disabled="!canBet || loading" :class="['w-full py-4 rounded-xl text-sm font-bold transition-colors active:scale-[0.98] touch-manipulation min-h-[52px]', canBet && !loading ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg shadow-blue-500/25' : 'bg-white/10 text-white/30']">{{ loading ? 'Placing...' : betText }}</button>
+      <button @click="placeBetHandler" :disabled="!canBet" :class="['w-full py-4 rounded-xl text-sm font-bold transition-colors active:scale-[0.98] touch-manipulation', canBet ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg shadow-blue-500/25' : 'bg-white/10 text-white/30']">{{ betText }}</button>
     </div>
 
     <Teleport to="body">
@@ -127,294 +64,35 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useLanguage } from '~/composables/useLanguage'
-import { useAuth } from '~/composables/useAuth'
-import { useApi } from '~/composables/useApi'
-import { useBetting } from '~/composables/useBetting'
+import { ref, computed } from 'vue'
 
-// Lazy load - define page meta
 definePageMeta({
   keepalive: true
 })
 
-const { t } = useLanguage()
-const { userBalance, isLoggedIn, refreshProfile, initAuth } = useAuth()
-const api = useApi()
-const { placeBet } = useBetting()
-
 const selected = ref([])
 const amount = ref(1000)
-const timer = ref('00:00:00')
-const showPatterns = ref(false)
-const loading = ref(false)
 const toast = ref(null)
-const multiplier = ref(85)
-const currentSession = ref('')
-const sessionTime = ref('')
-const isWeekend = ref(false)
-const weekendMessage = ref('')
 
-// Generate all numbers 00-99 - computed once
-const allNumbers = Object.freeze(Array.from({ length: 100 }, (_, i) => i.toString().padStart(2, '0')))
-
-// Helper functions for pattern calculations - memoized
-const getPathee = (digit) => allNumbers.filter(num => num.includes(digit))
-const getHtiteSee = (digit) => allNumbers.filter(num => num.startsWith(digit))
-const getNoutPate = (digit) => allNumbers.filter(num => num.endsWith(digit))
-const getBrake = (digit) => {
-  const index = parseInt(digit)
-  if (index === 0) return ['00']
-  return allNumbers.filter(num => {
-    const a = parseInt(num[0])
-    const b = parseInt(num[1])
-    return (a + b === index) || (a + b === index + 10)
-  })
-}
-
-// Pre-compute patterns once - frozen to prevent reactivity overhead
-const patterns = Object.freeze([
-  // Basic Patterns
-  { id: 'pathee0', name: '0 ပါတ်', nums: getPathee('0').map(n => parseInt(n)) },
-  { id: 'pathee1', name: '1 ပါတ်', nums: getPathee('1').map(n => parseInt(n)) },
-  { id: 'pathee2', name: '2 ပါတ်', nums: getPathee('2').map(n => parseInt(n)) },
-  { id: 'pathee3', name: '3 ပါတ်', nums: getPathee('3').map(n => parseInt(n)) },
-  { id: 'pathee4', name: '4 ပါတ်', nums: getPathee('4').map(n => parseInt(n)) },
-  { id: 'pathee5', name: '5 ပါတ်', nums: getPathee('5').map(n => parseInt(n)) },
-  { id: 'pathee6', name: '6 ပါတ်', nums: getPathee('6').map(n => parseInt(n)) },
-  { id: 'pathee7', name: '7 ပါတ်', nums: getPathee('7').map(n => parseInt(n)) },
-  { id: 'pathee8', name: '8 ပါတ်', nums: getPathee('8').map(n => parseInt(n)) },
-  { id: 'pathee9', name: '9 ပါတ်', nums: getPathee('9').map(n => parseInt(n)) },
-  
-  // First Digit Patterns
-  { id: 'htite0', name: '0 ထိပ်', nums: getHtiteSee('0').map(n => parseInt(n)) },
-  { id: 'htite1', name: '1 ထိပ်', nums: getHtiteSee('1').map(n => parseInt(n)) },
-  { id: 'htite2', name: '2 ထိပ်', nums: getHtiteSee('2').map(n => parseInt(n)) },
-  { id: 'htite3', name: '3 ထိပ်', nums: getHtiteSee('3').map(n => parseInt(n)) },
-  { id: 'htite4', name: '4 ထိပ်', nums: getHtiteSee('4').map(n => parseInt(n)) },
-  { id: 'htite5', name: '5 ထိပ်', nums: getHtiteSee('5').map(n => parseInt(n)) },
-  { id: 'htite6', name: '6 ထိပ်', nums: getHtiteSee('6').map(n => parseInt(n)) },
-  { id: 'htite7', name: '7 ထိပ်', nums: getHtiteSee('7').map(n => parseInt(n)) },
-  { id: 'htite8', name: '8 ထိပ်', nums: getHtiteSee('8').map(n => parseInt(n)) },
-  { id: 'htite9', name: '9 ထိပ်', nums: getHtiteSee('9').map(n => parseInt(n)) },
-  
-  // Last Digit Patterns
-  { id: 'pate0', name: '0 ပိတ်', nums: getNoutPate('0').map(n => parseInt(n)) },
-  { id: 'pate1', name: '1 ပိတ်', nums: getNoutPate('1').map(n => parseInt(n)) },
-  { id: 'pate2', name: '2 ပိတ်', nums: getNoutPate('2').map(n => parseInt(n)) },
-  { id: 'pate3', name: '3 ပိတ်', nums: getNoutPate('3').map(n => parseInt(n)) },
-  { id: 'pate4', name: '4 ပိတ်', nums: getNoutPate('4').map(n => parseInt(n)) },
-  { id: 'pate5', name: '5 ပိတ်', nums: getNoutPate('5').map(n => parseInt(n)) },
-  { id: 'pate6', name: '6 ပိတ်', nums: getNoutPate('6').map(n => parseInt(n)) },
-  { id: 'pate7', name: '7 ပိတ်', nums: getNoutPate('7').map(n => parseInt(n)) },
-  { id: 'pate8', name: '8 ပိတ်', nums: getNoutPate('8').map(n => parseInt(n)) },
-  { id: 'pate9', name: '9 ပိတ်', nums: getNoutPate('9').map(n => parseInt(n)) },
-  
-  // Sum Patterns (Brake)
-  { id: 'brake0', name: '0 ဘရိတ်', nums: getBrake('0').map(n => parseInt(n)) },
-  { id: 'brake1', name: '1 ဘရိတ်', nums: getBrake('1').map(n => parseInt(n)) },
-  { id: 'brake2', name: '2 ဘရိတ်', nums: getBrake('2').map(n => parseInt(n)) },
-  { id: 'brake3', name: '3 ဘရိတ်', nums: getBrake('3').map(n => parseInt(n)) },
-  { id: 'brake4', name: '4 ဘရိတ်', nums: getBrake('4').map(n => parseInt(n)) },
-  { id: 'brake5', name: '5 ဘရိတ်', nums: getBrake('5').map(n => parseInt(n)) },
-  { id: 'brake6', name: '6 ဘရိတ်', nums: getBrake('6').map(n => parseInt(n)) },
-  { id: 'brake7', name: '7 ဘရိတ်', nums: getBrake('7').map(n => parseInt(n)) },
-  { id: 'brake8', name: '8 ဘရိတ်', nums: getBrake('8').map(n => parseInt(n)) },
-  { id: 'brake9', name: '9 ဘရိတ်', nums: getBrake('9').map(n => parseInt(n)) },
-  
-  // Collection Patterns
-  { id: 'evenFirst', name: 'ရှေစုံ', nums: allNumbers.filter(num => parseInt(num[0]) % 2 === 0).map(n => parseInt(n)) },
-  { id: 'evenLast', name: 'နောက်စုံ', nums: allNumbers.filter(num => parseInt(num[1]) % 2 === 0).map(n => parseInt(n)) },
-  { id: 'oddFirst', name: 'ရှေမ', nums: allNumbers.filter(num => parseInt(num[0]) % 2 === 1).map(n => parseInt(n)) },
-  { id: 'oddLast', name: 'နောက်မ', nums: allNumbers.filter(num => parseInt(num[1]) % 2 === 1).map(n => parseInt(n)) },
-  
-  // Special Combinations
-  { id: 'aPuu', name: 'အပူး', nums: allNumbers.filter(num => num[0] === num[1]).map(n => parseInt(n)) },
-  { id: 'evenEven', name: 'စုံစုံ', nums: allNumbers.filter(num => parseInt(num[0]) % 2 === 0 && parseInt(num[1]) % 2 === 0).map(n => parseInt(n)) },
-  { id: 'oddOdd', name: 'မမ', nums: allNumbers.filter(num => parseInt(num[0]) % 2 === 1 && parseInt(num[1]) % 2 === 1).map(n => parseInt(n)) },
-  { id: 'evenOdd', name: 'စုံမ', nums: allNumbers.filter(num => parseInt(num[0]) % 2 === 0 && parseInt(num[1]) % 2 === 1).map(n => parseInt(n)) },
-  { id: 'oddEven', name: 'မစုံ', nums: allNumbers.filter(num => parseInt(num[0]) % 2 === 1 && parseInt(num[1]) % 2 === 0).map(n => parseInt(n)) },
-  
-  // Mathematical Relationships
-  { id: 'power', name: 'ပါ၀ါ', nums: allNumbers.filter(num => parseInt(num[0]) + 5 === parseInt(num[1])).map(n => parseInt(n)) },
-  { id: 'powerR', name: 'ပါ၀ါ R', nums: allNumbers.filter(num => parseInt(num[1]) + 5 === parseInt(num[0])).map(n => parseInt(n)) },
-  
-  // Fixed Special Patterns
-  { id: 'natKhat', name: 'နတ်ခတ်', nums: Object.freeze([7, 18, 24, 35, 69]) },
-  { id: 'natKhatR', name: 'နတ်ခတ် R', nums: Object.freeze([70, 81, 42, 53, 96]) }
-])
-
-// Use Set for O(1) lookup
 const selectedSet = computed(() => new Set(selected.value))
-
 const total = computed(() => selected.value.length * amount.value)
-const canBet = computed(() => selected.value.length > 0 && total.value <= userBalance.value && isLoggedIn.value && !isWeekend.value)
+const canBet = computed(() => selected.value.length > 0)
 const betText = computed(() => {
-  if (!isLoggedIn.value) return 'Login Required'
-  if (isWeekend.value) return 'Closed on Weekends'
-  if (!selected.value.length) return t('selectNumbers')
-  if (total.value > userBalance.value) return t('insufficientBalance')
-  return `${t('placeBet')} - ${formatBalance(total.value)} ${t('mmk')}`
+  if (!selected.value.length) return 'Select Numbers'
+  return `Place Bet - ${formatBalance(total.value)} MMK`
 })
 const reverseNums = computed(() => selected.value.map(n => (n % 10) * 10 + Math.floor(n / 10)).filter(r => !selected.value.includes(r)))
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
-
-const calculate2DDrawTime = () => {
-  const now = new Date()
-  const dayOfWeek = now.getDay() // 0 = Sunday, 6 = Saturday
-  
-  // Check if weekend
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    isWeekend.value = true
-    currentSession.value = 'Closed'
-    sessionTime.value = 'Weekend'
-    
-    // Calculate next Monday
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : 2 // Sunday = 1 day, Saturday = 2 days
-    const nextMonday = new Date(now)
-    nextMonday.setDate(now.getDate() + daysUntilMonday)
-    
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    weekendMessage.value = daysUntilMonday === 1 ? 'Tomorrow' : `${daysUntilMonday} days`
-    
-    return null
-  }
-  
-  isWeekend.value = false
-  
-  const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
-  const currentTime = currentHour * 60 + currentMinute
-  
-  // Draw times in minutes from midnight
-  const morningDraw = 12 * 60 // 12:00 PM
-  const eveningDraw = 16 * 60 + 30 // 4:30 PM
-  
-  let nextDrawTime
-  let nextDrawDate = new Date(now)
-  
-  if (currentTime < morningDraw) {
-    // Before morning draw
-    currentSession.value = 'Morning Session'
-    sessionTime.value = '12:00 PM'
-    nextDrawTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0)
-  } else if (currentTime < eveningDraw) {
-    // Between morning and evening draw
-    currentSession.value = 'Evening Session'
-    sessionTime.value = '4:30 PM'
-    nextDrawTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 30, 0)
-  } else {
-    // After evening draw, next is tomorrow morning (or Monday if Friday)
-    if (dayOfWeek === 5) { // Friday
-      // Next draw is Monday morning
-      nextDrawDate.setDate(now.getDate() + 3)
-    } else {
-      // Next draw is tomorrow morning
-      nextDrawDate.setDate(now.getDate() + 1)
-    }
-    currentSession.value = 'Morning Session'
-    sessionTime.value = '12:00 PM'
-    nextDrawTime = new Date(nextDrawDate.getFullYear(), nextDrawDate.getMonth(), nextDrawDate.getDate(), 12, 0, 0)
-  }
-  
-  return nextDrawTime
-}
-
-const updateTimer = () => {
-  const nextDraw = calculate2DDrawTime()
-  
-  if (!nextDraw || isWeekend.value) {
-    return
-  }
-  
-  const now = new Date()
-  const timeDiff = nextDraw.getTime() - now.getTime()
-  
-  if (timeDiff <= 0) {
-    // Draw time passed, recalculate
-    calculate2DDrawTime()
-    return
-  }
-  
-  const hours = Math.floor(timeDiff / (1000 * 60 * 60))
-  const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000)
-  
-  timer.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-}
 const toggle = (n) => { const i = selected.value.indexOf(n); i > -1 ? selected.value.splice(i, 1) : selected.value.push(n) }
 const addReverse = () => reverseNums.value.forEach(n => { if (!selected.value.includes(n)) selected.value.push(n) })
-const applyPattern = (p) => p.nums.forEach(n => { if (!selected.value.includes(n)) selected.value.push(n) })
 const showToast = (msg, type = 'success') => { toast.value = { msg, type }; setTimeout(() => toast.value = null, 3000) }
 
-const placeBetHandler = async () => {
-  if (!isLoggedIn.value) {
-    await navigateTo('/login')
-    return
-  }
-  
+const placeBetHandler = () => {
   if (!canBet.value) return
-  loading.value = true
-  
-  const betDetails = selected.value.map(digit => ({
-    digit: digit.toString().padStart(2, '0'),
-    amount: amount.value
-  }))
-  
-  const result = await placeBet('2D', betDetails)
-  
-  if (result.success) {
-    showToast(result.message || '2D bet placed successfully!', 'success')
-    selected.value = []
-    await refreshProfile()
-  } else {
-    showToast(result.error || 'Failed to place bet', 'error')
-  }
-  
-  loading.value = false
+  showToast(`Demo: Bet placed for ${selected.value.length} numbers!`, 'success')
+  selected.value = []
 }
-
-let timerInterval
-
-const handleKeydown = (e) => {
-  if (e.key === 'r' || e.key === 'R') {
-    if (reverseNums.value.length > 0) {
-      addReverse()
-    }
-  }
-}
-
-onMounted(async () => {
-  // Initialize auth first
-  await initAuth()
-  
-  try {
-    const result = await api.getGameSettings()
-    if (result.msgState === 'data' && result.data) {
-      const setting2D = result.data.find(s => s.name === '2D')
-      if (setting2D) {
-        multiplier.value = setting2D.value
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load game settings:', error)
-  }
-  
-  window.addEventListener('keydown', handleKeydown)
-  
-  // Initialize timer
-  calculate2DDrawTime()
-  
-  timerInterval = setInterval(() => {
-    updateTimer()
-  }, 1000)
-})
-
-onUnmounted(() => {
-  clearInterval(timerInterval)
-  window.removeEventListener('keydown', handleKeydown)
-})
 </script>
 
 <style>
