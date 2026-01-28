@@ -5,7 +5,7 @@
 </template>
 
 <style>
-* { -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; }
-body { background: #000; }
+* { 
+  -webkit-tap-highlight-color: transparent;
+}
 </style>

@@ -1,54 +1,89 @@
 <template>
-  <div class="text-white">
-    <div class="px-4 py-3">
-      <div class="bg-white/5 rounded-xl p-1 flex gap-1 border border-white/5">
-        <button @click="activeTab = '2d'" :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-all', activeTab === '2d' ? 'bg-blue-500 shadow-lg' : 'text-white/50']">2D Results</button>
-        <button @click="activeTab = '3d'" :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-all', activeTab === '3d' ? 'bg-purple-500 shadow-lg' : 'text-white/50']">3D Results</button>
-      </div>
+  <div class="container mx-auto p-4 space-y-6">
+    
+    <!-- Tab Switcher -->
+    <div class="flex gap-2">
+      <Button 
+        @click="activeTab = '2d'" 
+        :variant="activeTab === '2d' ? 'default' : 'outline'"
+        class="flex-1"
+        size="sm"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+        </svg>
+        2D Results
+      </Button>
+      <Button 
+        @click="activeTab = '3d'" 
+        :variant="activeTab === '3d' ? 'default' : 'outline'"
+        class="flex-1"
+        size="sm"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        3D Results
+      </Button>
     </div>
 
-    <div v-if="activeTab === '2d'" class="px-4 py-3 space-y-3">
-      <div v-for="result in demo2DResults" :key="result.date" class="bg-white/5 rounded-xl p-4 border border-white/5">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <p class="text-sm font-bold">{{ result.date }}</p>
-            <p class="text-[10px] text-white/40">{{ result.day }}</p>
+    <!-- 2D Results -->
+    <div v-if="activeTab === '2d'" class="space-y-3">
+      <Card v-for="result in demo2DResults" :key="result.date">
+        <CardContent class="p-4">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-semibold">{{ result.date }}</h3>
+              <p class="text-xs text-muted-foreground">{{ result.day }}</p>
+            </div>
+            <Badge v-if="result.isLive" variant="default" class="bg-green-500 hover:bg-green-600">
+              <span class="relative flex h-2 w-2 mr-1">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+              LIVE
+            </Badge>
           </div>
-          <div v-if="result.isLive" class="bg-green-500/20 px-2 py-1 rounded-lg">
-            <p class="text-[10px] font-bold text-green-400">LIVE</p>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-muted rounded-lg p-4">
+              <p class="text-xs text-muted-foreground mb-2">12:01 PM</p>
+              <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ result.morning }}</p>
+            </div>
+            <div class="bg-muted rounded-lg p-4">
+              <p class="text-xs text-muted-foreground mb-2">4:30 PM</p>
+              <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ result.evening }}</p>
+            </div>
           </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div class="bg-white/5 rounded-lg p-3">
-            <p class="text-[10px] text-white/40 mb-1">12:01 PM</p>
-            <p class="text-2xl font-black text-blue-400">{{ result.morning }}</p>
-          </div>
-          <div class="bg-white/5 rounded-lg p-3">
-            <p class="text-[10px] text-white/40 mb-1">4:30 PM</p>
-            <p class="text-2xl font-black text-blue-400">{{ result.evening }}</p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
 
-    <div v-else class="px-4 py-3 space-y-3">
-      <div v-for="result in demo3DResults" :key="result.date" class="bg-white/5 rounded-xl p-4 border border-white/5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-bold">{{ result.date }}</p>
-            <p class="text-[10px] text-white/40">{{ result.session }}</p>
+    <!-- 3D Results -->
+    <div v-else class="space-y-3">
+      <Card v-for="result in demo3DResults" :key="result.date">
+        <CardContent class="p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <h3 class="text-sm font-semibold mb-1">{{ result.date }}</h3>
+              <p class="text-xs text-muted-foreground">{{ result.session }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-4xl font-bold text-purple-600 dark:text-purple-400">{{ result.number }}</p>
+            </div>
           </div>
-          <div>
-            <p class="text-3xl font-black text-purple-400">{{ result.number }}</p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 definePageMeta({
   keepalive: true

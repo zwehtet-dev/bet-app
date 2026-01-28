@@ -1,55 +1,170 @@
 <template>
-  <div class="text-white">
-    <div class="px-4 py-3">
-      <div class="bg-white/5 rounded-xl p-1 flex gap-1 border border-white/5">
-        <button @click="activeTab = '2d3d'" :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-all', activeTab === '2d3d' ? 'bg-blue-500 shadow-lg' : 'text-white/50']">2D/3D</button>
-        <button @click="activeTab = 'soccer'" :class="['flex-1 py-2.5 rounded-lg text-xs font-bold transition-all', activeTab === 'soccer' ? 'bg-green-500 shadow-lg' : 'text-white/50']">Football</button>
-      </div>
+  <div class="container mx-auto p-4 space-y-6">
+
+    <!-- Tab Switcher -->
+    <div class="flex gap-2">
+      <Button 
+        @click="activeTab = '2d3d'" 
+        :variant="activeTab === '2d3d' ? 'default' : 'outline'"
+        class="flex-1"
+        size="sm"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+        </svg>
+        2D/3D
+      </Button>
+      <Button 
+        @click="activeTab = 'soccer'" 
+        :variant="activeTab === 'soccer' ? 'default' : 'outline'"
+        class="flex-1"
+        size="sm"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Football
+      </Button>
     </div>
 
-    <div v-if="activeTab === '2d3d'" class="px-4 py-3 space-y-3">
-      <div v-for="bet in demoBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
-        <div class="flex items-center gap-3 mb-3">
-          <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.gameType === '2D' ? 'bg-blue-500 shadow-blue-500/25' : 'bg-purple-500 shadow-purple-500/25']"><img :src="bet.gameType === '2D' ? '/images/2d_icon.png' : '/images/3d_icon.png'" :alt="bet.gameType" class="w-full h-full object-cover rounded-lg" /></div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5"><p class="text-sm font-bold">{{ bet.gameType }} Bet</p><span :class="['text-[10px] px-1.5 py-0.5 rounded font-bold', bet.status === 'won' ? 'bg-green-500' : bet.status === 'lost' ? 'bg-red-500' : 'bg-yellow-500 text-black']">{{ bet.status.toUpperCase() }}</span></div>
-            <p class="text-[10px] text-white/40">{{ bet.date }}</p>
-          </div>
-          <div class="text-right"><p class="text-xs text-white/50">{{ formatBalance(bet.amount) }}</p><p v-if="bet.status === 'won'" class="text-sm font-black text-green-400">+{{ formatBalance(bet.winAmount) }}</p></div>
-        </div>
-        <div class="bg-white/5 rounded-lg p-2.5 flex items-center gap-2">
-          <span class="text-[10px] text-white/40">Numbers:</span>
-          <div class="flex flex-wrap gap-1">
-            <span v-for="n in bet.numbers" :key="n" :class="['px-2 py-0.5 rounded text-xs font-bold', bet.gameType === '2D' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400']">{{ n }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-else class="px-4 py-3 space-y-3">
-      <div v-for="bet in demoSoccerBets" :key="bet.id" class="bg-white/5 rounded-xl p-4 border border-white/5">
-        <div class="flex items-center gap-3">
-          <div :class="['w-11 h-11 rounded-xl flex items-center justify-center shadow-lg overflow-hidden', bet.type === 'Maung' ? 'bg-orange-500 shadow-orange-500/25' : 'bg-green-500 shadow-green-500/25']">
-            <img :src="bet.type === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" :alt="bet.type" class="w-full h-full object-cover rounded-lg" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5">
-              <p class="text-sm font-bold">{{ bet.type }} Bet</p>
-              <span :class="['text-[10px] px-1.5 py-0.5 rounded font-bold', bet.status === 'won' ? 'bg-green-500' : bet.status === 'lost' ? 'bg-red-500' : 'bg-yellow-500 text-black']">{{ bet.status.toUpperCase() }}</span>
+    <!-- 2D/3D Bets -->
+    <div v-if="activeTab === '2d3d'" class="space-y-3">
+      <Card v-for="bet in demoBets" :key="bet.id">
+        <CardContent class="p-4">
+          <div class="flex items-start gap-3 mb-4">
+            <div :class="[
+              'h-12 w-12 rounded-lg flex items-center justify-center',
+              bet.gameType === '2D' ? 'bg-blue-500/10' : 'bg-purple-500/10'
+            ]">
+              <span :class="[
+                'text-lg font-bold',
+                bet.gameType === '2D' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'
+              ]">
+                {{ bet.gameType }}
+              </span>
             </div>
-            <p class="text-[10px] text-white/40">{{ bet.date }}</p>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-sm font-semibold">{{ bet.gameType }} Lottery</h3>
+                <Badge 
+                  :variant="bet.status === 'won' ? 'default' : bet.status === 'lost' ? 'destructive' : 'secondary'"
+                  class="text-[10px] px-1.5 py-0"
+                >
+                  {{ bet.status.toUpperCase() }}
+                </Badge>
+              </div>
+              <p class="text-xs text-muted-foreground">{{ bet.date }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-semibold">{{ formatBalance(bet.amount) }} <span class="text-xs text-muted-foreground">MMK</span></p>
+              <p v-if="bet.status === 'won'" class="text-sm font-bold text-green-600 dark:text-green-400">
+                +{{ formatBalance(bet.winAmount) }}
+              </p>
+            </div>
           </div>
-          <div class="text-right">
-            <p class="text-sm font-bold">{{ formatBalance(bet.amount) }}</p>
+          
+          <Separator class="mb-3" />
+          
+          <div class="space-y-2">
+            <p class="text-xs text-muted-foreground">Selected Numbers</p>
+            <div class="flex flex-wrap gap-2">
+              <Badge 
+                v-for="n in bet.numbers" 
+                :key="n"
+                :variant="bet.gameType === '2D' ? 'default' : 'secondary'"
+                class="font-mono font-bold"
+              >
+                {{ n }}
+              </Badge>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+
+      <!-- Empty State -->
+      <Card v-if="demoBets.length === 0" class="border-dashed">
+        <CardContent class="flex flex-col items-center justify-center py-12">
+          <div class="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <svg class="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium mb-1">No betting history</p>
+          <p class="text-xs text-muted-foreground">Your 2D/3D bets will appear here</p>
+        </CardContent>
+      </Card>
     </div>
+
+    <!-- Football Bets -->
+    <div v-else class="space-y-3">
+      <Card 
+        v-for="bet in demoSoccerBets" 
+        :key="bet.id"
+        class="cursor-pointer hover:shadow-lg transition-all active:scale-[0.98]"
+        @click="$router.push('/soccer-bet-details')"
+      >
+        <CardContent class="p-4">
+          <div class="flex items-center gap-3">
+            <div :class="[
+              'h-12 w-12 rounded-lg flex items-center justify-center overflow-hidden',
+              bet.type === 'Maung' ? 'bg-orange-500/10' : 'bg-green-500/10'
+            ]">
+              <img 
+                :src="bet.type === 'Maung' ? '/images/maung_icon.png' : '/images/bawdi_icon.png'" 
+                :alt="bet.type"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-sm font-semibold">{{ bet.type }}</h3>
+                <Badge 
+                  :variant="bet.status === 'won' ? 'default' : bet.status === 'lost' ? 'destructive' : 'secondary'"
+                  class="text-[10px] px-1.5 py-0"
+                >
+                  {{ bet.status.toUpperCase() }}
+                </Badge>
+              </div>
+              <p class="text-xs text-muted-foreground">{{ bet.date }}</p>
+            </div>
+            <div class="text-right flex items-center gap-2">
+              <div>
+                <p class="text-sm font-semibold">{{ formatBalance(bet.amount) }} <span class="text-xs text-muted-foreground">MMK</span></p>
+                <p v-if="bet.status === 'won'" class="text-xs font-bold text-green-600 dark:text-green-400">
+                  +{{ formatBalance(bet.winAmount) }}
+                </p>
+              </div>
+              <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <!-- Empty State -->
+      <Card v-if="demoSoccerBets.length === 0" class="border-dashed">
+        <CardContent class="flex flex-col items-center justify-center py-12">
+          <div class="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <svg class="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium mb-1">No betting history</p>
+          <p class="text-xs text-muted-foreground">Your football bets will appear here</p>
+        </CardContent>
+      </Card>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 
 definePageMeta({
   keepalive: true
@@ -64,8 +179,9 @@ const demoBets = [
 ]
 
 const demoSoccerBets = [
-  { id: 1, type: 'Bawdi', status: 'won', amount: 10000, date: 'Jan 27, 03:00 PM' },
-  { id: 2, type: 'Maung', status: 'pending', amount: 15000, date: 'Jan 26, 07:00 PM' }
+  { id: 1, type: 'Bawdi', status: 'won', amount: 10000, winAmount: 18500, date: 'Jan 27, 03:00 PM' },
+  { id: 2, type: 'Maung', status: 'pending', amount: 15000, date: 'Jan 26, 07:00 PM' },
+  { id: 3, type: 'Bawdi', status: 'lost', amount: 8000, date: 'Jan 25, 02:30 PM' }
 ]
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)

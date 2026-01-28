@@ -1,90 +1,163 @@
 <template>
-  <div class="text-white">
-    <div class="px-4 py-4">
-      <div class="bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent rounded-2xl p-5 border border-green-500/20">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
-            <img src="/images/bawdi_icon.png" alt="Bawdi" class="w-full h-full object-cover" />
+  <div class="container mx-auto p-4 space-y-6">
+    
+    <!-- Bet Summary -->
+    <Card>
+      <CardHeader>
+        <div class="flex items-center gap-3">
+          <div class="h-12 w-12 rounded-lg overflow-hidden bg-muted">
+            <img :src="betData.icon" :alt="betData.type" class="w-full h-full object-cover" />
           </div>
           <div class="flex-1">
-            <p class="text-sm text-white/50">Bet ID: #DEMO123</p>
-            <p class="text-lg font-black">Bawdi Bet</p>
+            <CardDescription>{{ betData.id }}</CardDescription>
+            <CardTitle class="text-lg">{{ betData.type }}</CardTitle>
           </div>
-          <span class="bg-yellow-500 text-black px-3 py-1 rounded-lg text-xs font-bold">PENDING</span>
+          <Badge :variant="getStatusVariant(betData.status)">
+            {{ betData.status.toUpperCase() }}
+          </Badge>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
           <div>
-            <p class="text-xs text-white/40">Total Amount</p>
-            <p class="text-xl font-black text-amber-400">10,000 MMK</p>
+            <p class="text-sm text-muted-foreground mb-1">Stake</p>
+            <p class="text-2xl font-bold">{{ formatBalance(betData.totalAmount) }} <span class="text-sm text-muted-foreground font-normal">MMK</span></p>
           </div>
           <div>
-            <p class="text-xs text-white/40">Potential Win</p>
-            <p class="text-xl font-black text-green-400">18,500 MMK</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="px-4 py-3">
-      <h3 class="text-sm font-bold mb-3">Bet Details</h3>
-      <div class="space-y-2">
-        <div class="bg-white/5 rounded-xl p-4 border border-white/5">
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-sm font-bold">Man United vs Liverpool</p>
-            <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold">Home Win</span>
-          </div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-white/40">Premier League</span>
-            <span class="text-white/60">Odds: 1.85</span>
-          </div>
-          <div class="mt-2 pt-2 border-t border-white/10 flex justify-between text-xs">
-            <span class="text-white/40">Bet Amount:</span>
-            <span class="font-bold">5,000 MMK</span>
+            <p class="text-sm text-muted-foreground mb-1">
+              {{ betData.status === 'won' ? 'Won' : 'Potential' }}
+            </p>
+            <p :class="[
+              'text-2xl font-bold',
+              betData.status === 'won' ? 'text-green-600 dark:text-green-400' : ''
+            ]">
+              {{ formatBalance(betData.potentialWin) }} <span class="text-sm text-muted-foreground font-normal">MMK</span>
+            </p>
           </div>
         </div>
 
-        <div class="bg-white/5 rounded-xl p-4 border border-white/5">
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-sm font-bold">Barcelona vs Real Madrid</p>
-            <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-bold">Away Win</span>
-          </div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-white/40">La Liga</span>
-            <span class="text-white/60">Odds: 2.05</span>
-          </div>
-          <div class="mt-2 pt-2 border-t border-white/10 flex justify-between text-xs">
-            <span class="text-white/40">Bet Amount:</span>
-            <span class="font-bold">5,000 MMK</span>
-          </div>
+        <div v-if="betData.status === 'won'" class="flex items-center gap-2 p-3 rounded-lg bg-green-500/10">
+          <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-sm text-green-600 dark:text-green-400 font-medium">You won this bet!</p>
         </div>
-      </div>
+      </CardContent>
+    </Card>
+
+    <!-- Matches -->
+    <div class="space-y-3">
+      <Card v-for="(match, index) in betData.matches" :key="index">
+        <CardHeader>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <CardTitle class="text-base">{{ match.homeTeam }} vs {{ match.awayTeam }}</CardTitle>
+              <CardDescription>{{ match.league }}</CardDescription>
+            </div>
+            <Badge :variant="getBetTypeVariant(match.betType)" class="shrink-0">
+              {{ match.betType }}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent class="space-y-3">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-muted-foreground">{{ match.kickoff }}</span>
+            <span class="font-bold">{{ match.odds }}</span>
+          </div>
+
+          <div v-if="match.score" class="p-4 rounded-lg bg-muted/50 flex items-center justify-center gap-6">
+            <div class="text-center">
+              <p class="text-3xl font-bold">{{ match.score.home }}</p>
+            </div>
+            <span class="text-muted-foreground font-bold">-</span>
+            <div class="text-center">
+              <p class="text-3xl font-bold">{{ match.score.away }}</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-muted-foreground">{{ formatBalance(match.amount) }} MMK</span>
+            <Badge v-if="match.result" :variant="match.result === 'won' ? 'default' : 'destructive'">
+              {{ match.result === 'won' ? 'Won' : 'Lost' }}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
-    <div class="px-4 py-3">
-      <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-        <p class="text-xs text-blue-300 mb-2">📌 Bet Information</p>
-        <div class="space-y-1 text-xs">
-          <div class="flex justify-between"><span class="text-white/50">Placed:</span><span>Jan 27, 2026 3:00 PM</span></div>
-          <div class="flex justify-between"><span class="text-white/50">Status:</span><span class="text-yellow-400">Pending</span></div>
-          <div class="flex justify-between"><span class="text-white/50">Type:</span><span>Bawdi (Body Style)</span></div>
-        </div>
-      </div>
-    </div>
 
-    <div class="px-4 py-4">
-      <NuxtLink to="/history" class="w-full bg-white/10 hover:bg-white/15 py-3.5 rounded-xl text-sm font-bold border border-white/10 flex items-center justify-center active:scale-[0.98]">
-        Back to History
-      </NuxtLink>
-    </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+
 definePageMeta({
   keepalive: true
 })
 
+// Demo data - In production, this would come from route params or API
+const betData = ref({
+  id: '#BET2026012701',
+  type: 'Bawdi',
+  title: 'Body Style Mix',
+  betStyle: 'Body Style',
+  icon: '/images/bawdi_icon.png',
+  status: 'pending', // 'pending', 'won', 'lost'
+  totalAmount: 10000,
+  potentialWin: 18500,
+  totalOdds: '1.85',
+  placedDate: 'Jan 27, 2026 3:00 PM',
+  matches: [
+    {
+      homeTeam: 'Man United',
+      awayTeam: 'Liverpool',
+      league: 'Premier League',
+      betType: 'Home Win',
+      odds: '1.85',
+      amount: 5000,
+      kickoff: 'Jan 28, 8:00 PM',
+      score: null, // { home: 2, away: 1 } when finished
+      result: null // 'won' or 'lost' when finished
+    },
+    {
+      homeTeam: 'Barcelona',
+      awayTeam: 'Real Madrid',
+      league: 'La Liga',
+      betType: 'Away Win',
+      odds: '2.05',
+      amount: 5000,
+      kickoff: 'Jan 28, 10:00 PM',
+      score: null,
+      result: null
+    }
+  ]
+})
+
+const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
+
+const getStatusVariant = (status) => {
+  switch (status) {
+    case 'won': return 'default'
+    case 'lost': return 'destructive'
+    case 'pending': return 'secondary'
+    default: return 'outline'
+  }
+}
+
+const getBetTypeVariant = (betType) => {
+  if (betType.includes('Home')) return 'default'
+  if (betType.includes('Away')) return 'secondary'
+  return 'outline'
+}
+
 useHead({
-  title: 'Bet Details - 2D3D Demo'
+  title: `${betData.value.type} Bet Details - 2D3D Demo`
 })
 </script>

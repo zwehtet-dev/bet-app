@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./components/**/*.{js,vue,ts}",
     "./layouts/**/*.vue",
@@ -8,34 +9,26 @@ export default {
     "./app.vue",
     "./error.vue"
   ],
-  // Optimize for production - only include used classes
   safelist: [
-    // Dynamic color classes used in navigation
-    'bg-blue-500/15', 'bg-green-500/15', 'bg-purple-500/15', 'bg-orange-500/15',
-    'text-blue-400', 'text-green-400', 'text-purple-400', 'text-orange-400',
-    // Gradient classes
-    'from-blue-500', 'from-purple-500', 'from-green-500', 'from-orange-500',
-    'to-blue-600', 'to-purple-600', 'to-green-600', 'to-red-500',
+    // Dynamic gradient classes
+    'from-cyan-500', 'from-violet-500', 'from-emerald-500', 'from-orange-500',
+    'to-blue-500', 'to-fuchsia-500', 'to-teal-500', 'to-rose-500',
     // Shadow classes
-    'shadow-blue-500/25', 'shadow-purple-500/25', 'shadow-green-500/25', 'shadow-orange-500/25'
+    'shadow-cyan-500/20', 'shadow-violet-500/20', 'shadow-emerald-500/20', 'shadow-orange-500/20',
+    // Background classes
+    'bg-cyan-500/20', 'bg-violet-500/20', 'bg-emerald-500/20', 'bg-orange-500/20',
+    // Text classes
+    'text-cyan-400', 'text-violet-400', 'text-emerald-400', 'text-orange-400'
   ],
   theme: {
     extend: {
       colors: {
-        'theme': {
-          'primary': '#1e3a8a',
-          'secondary': '#1e40af', 
-          'tertiary': '#1d4ed8'
+        slate: {
+          950: '#020617',
         }
       },
-      backgroundImage: {
-        'theme-gradient': 'linear-gradient(180deg, #1e3a8a 0%, #1e40af 30%, #1d4ed8 100%)',
-        'main-bg': "url('/images/bg-1.jpeg')",
-      },
-      // Optimize animations for mobile
       animation: {
-        'marquee': 'marquee 20s linear infinite',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'marquee': 'marquee 30s linear infinite',
       },
       keyframes: {
         marquee: {
@@ -43,17 +36,17 @@ export default {
           '100%': { transform: 'translateX(-50%)' },
         }
       },
-      // Mobile-first spacing
       spacing: {
         'safe': 'env(safe-area-inset-bottom)',
         'safe-top': 'env(safe-area-inset-top)',
+      },
+      backdropBlur: {
+        xs: '2px',
       }
     },
   },
   plugins: [],
-  // Reduce CSS output size
   corePlugins: {
-    // Disable unused utilities for smaller bundle
     container: false,
     float: false,
     clear: false,
