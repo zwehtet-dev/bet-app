@@ -1,140 +1,414 @@
 <template>
   <div class="container mx-auto p-4 space-y-6">
-    
     <!-- Balance Card -->
     <Card>
-      <CardHeader>
-        <div class="flex items-center justify-between">
-          <div class="space-y-1">
-            <CardDescription>Total Balance</CardDescription>
-            <CardTitle class="text-4xl font-bold">{{ formatAmount(demoBalance) }} <span class="text-lg text-muted-foreground font-normal">MMK</span></CardTitle>
+      <CardContent class="pt-6">
+        <div class="text-center space-y-2">
+          <p class="text-sm text-muted-foreground">Total Balance</p>
+          <p class="text-4xl font-bold">{{ formatBalance(balance?.balance || 0) }}</p>
+          <p class="text-xs text-muted-foreground">MMK</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Available</p>
+            <p class="text-lg font-semibold text-green-600 dark:text-green-400">
+              {{ formatBalance((balance?.balance || 0) - (balance?.locked_balance || 0)) }}
+            </p>
           </div>
-          <div class="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center">
-            <svg class="h-7 w-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Locked</p>
+            <p class="text-lg font-semibold text-orange-600 dark:text-orange-400">
+              {{ formatBalance(balance?.locked_balance || 0) }}
+            </p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent class="grid grid-cols-2 gap-3">
-        <Button @click="handleAction('deposit')" size="lg">
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Deposit
-        </Button>
-        <Button @click="handleAction('withdraw')" variant="outline" size="lg">
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-          </svg>
-          Withdraw
-        </Button>
+
+        <div class="grid grid-cols-2 gap-3 mt-6">
+          <Button @click="showDepositModal = true" class="w-full">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Deposit
+          </Button>
+          <Button @click="showWithdrawModal = true" variant="outline" class="w-full">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+            </svg>
+            Withdraw
+          </Button>
+        </div>
       </CardContent>
     </Card>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-3 gap-4">
-      <Card class="gap-0">
-        <CardContent class="text-center">
-          <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ formatAmount(150000) }}</p>
-          <p class="text-xs text-muted-foreground mt-1">Total Deposits</p>
-        </CardContent>
-      </Card>
-      <Card class="gap-0">
-        <CardContent class="text-center">
-          <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ formatAmount(50000) }}</p>
-          <p class="text-xs text-muted-foreground mt-1">Withdrawals</p>
-        </CardContent>
-      </Card>
-      <Card class="gap-0">
-        <CardContent class="text-center">
-          <p class="text-2xl font-bold">{{ demoTransactions.length }}</p>
-          <p class="text-xs text-muted-foreground mt-1">Transactions</p>
-        </CardContent>
-      </Card>
-    </div>
-
-    <!-- Payment Methods -->
-    <div class="space-y-3">
-      <h2 class="text-xl font-semibold">Payment Methods</h2>
-      <div class="grid grid-cols-4 gap-3">
-        <Button v-for="m in paymentMethods" :key="m.id" variant="outline" class="h-auto flex-col gap-2 p-4">
-          <div class="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-            <span class="text-sm font-bold text-primary">{{ m.name.slice(0, 2) }}</span>
+    <!-- Payment Requests -->
+    <Card>
+      <CardHeader>
+        <div class="flex items-center justify-between">
+          <CardTitle>Payment Requests</CardTitle>
+          <Button variant="ghost" size="sm" @click="loadPaymentRequests">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <SkeletonLoader v-if="isLoadingRequests" type="list-item" />
+        <div v-else-if="paymentRequests.length > 0" class="space-y-3">
+          <div v-for="request in paymentRequests" :key="request.id" class="p-3 rounded-lg bg-muted/50">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <p class="font-semibold">{{ request.type === 'deposit' ? 'Deposit' : 'Withdrawal' }}</p>
+                <p class="text-xs text-muted-foreground">{{ formatDateTime(request.created_at) }}</p>
+              </div>
+              <div :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(request.status)]">
+                {{ request.status.toUpperCase() }}
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-muted-foreground">Amount</span>
+              <span class="font-semibold">{{ formatBalance(request.amount) }} MMK</span>
+            </div>
+            <div v-if="request.payment_method" class="flex items-center justify-between mt-1">
+              <span class="text-sm text-muted-foreground">Method</span>
+              <span class="text-sm">{{ request.payment_method.name }}</span>
+            </div>
           </div>
-          <span class="text-xs font-medium truncate w-full">{{ m.name }}</span>
-        </Button>
-      </div>
-    </div>
+        </div>
+        <p v-else class="text-center text-muted-foreground py-4">No payment requests</p>
+      </CardContent>
+    </Card>
 
     <!-- Transaction History -->
-    <div class="space-y-3">
-      <h2 class="text-xl font-semibold">Recent Transactions</h2>
-      <div class="space-y-3">
-        <Card v-for="tx in demoTransactions" :key="tx.id" class="gap-0">
-          <CardContent class="flex items-center gap-4">
-            <div :class="[
-              'h-10 w-10 rounded-md flex items-center justify-center flex-shrink-0',
-              tx.type === 'deposit' ? 'bg-green-500/10' : 'bg-red-500/10'
-            ]">
-              <svg class="h-5 w-5" :class="tx.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'" 
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path v-if="tx.type === 'deposit'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-              </svg>
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Transactions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <SkeletonLoader v-if="isLoadingTransactions" type="list-item" />
+        <div v-else-if="transactions.length > 0" class="space-y-2">
+          <div v-for="tx in transactions" :key="tx.id" class="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div>
+              <p class="font-medium">{{ getTransactionLabel(tx.transaction_type) }}</p>
+              <p class="text-xs text-muted-foreground">{{ formatDateTime(tx.created_at) }}</p>
             </div>
-            
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">{{ tx.method }}</p>
-              <p class="text-xs text-muted-foreground">{{ tx.date }}</p>
-            </div>
-            
-            <div class="text-right flex-shrink-0">
-              <p :class="[
-                'text-base font-bold mb-1',
-                tx.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              ]">
-                {{ tx.type === 'deposit' ? '+' : '-' }}{{ formatAmount(tx.amount) }}
+            <div class="text-right">
+              <p :class="['font-semibold', tx.amount > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
+                {{ tx.amount > 0 ? '+' : '' }}{{ formatBalance(tx.amount) }}
               </p>
-              <Badge :variant="tx.status === 'completed' ? 'default' : 'secondary'" class="text-xs">
-                {{ tx.status }}
-              </Badge>
+              <p class="text-xs text-muted-foreground">{{ formatBalance(tx.balance_after) }}</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+        <p v-else class="text-center text-muted-foreground py-4">No transactions yet</p>
+      </CardContent>
+    </Card>
+
+    <!-- Deposit Modal -->
+    <div v-if="showDepositModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="showDepositModal = false">
+      <Card class="w-full max-w-md">
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <CardTitle>Deposit Request</CardTitle>
+            <Button variant="ghost" size="icon" @click="showDepositModal = false">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <div>
+            <label class="text-sm font-medium mb-2 block">Amount (MMK)</label>
+            <Input
+              v-model.number="depositAmount"
+              type="number"
+              placeholder="Enter amount"
+              min="1000"
+              step="1000"
+            />
+          </div>
+
+          <div>
+            <label class="text-sm font-medium mb-2 block">Payment Method</label>
+            <select v-model="selectedPaymentMethod" class="w-full p-2 rounded-lg border bg-background">
+              <option value="">Select payment method</option>
+              <option v-for="method in paymentMethods" :key="method.id" :value="method.id">
+                {{ method.name }} - {{ method.account_number }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium mb-2 block">Transaction ID (Optional)</label>
+            <Input
+              v-model="transactionId"
+              type="text"
+              placeholder="Enter transaction ID"
+            />
+          </div>
+
+          <div>
+            <label class="text-sm font-medium mb-2 block">Note (Optional)</label>
+            <textarea
+              v-model="note"
+              class="w-full p-2 rounded-lg border bg-background"
+              rows="3"
+              placeholder="Add any notes..."
+            ></textarea>
+          </div>
+
+          <Button
+            @click="submitDeposit"
+            class="w-full"
+            :disabled="isSubmitting || !depositAmount || !selectedPaymentMethod"
+          >
+            {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
 
+    <!-- Withdraw Modal -->
+    <div v-if="showWithdrawModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="showWithdrawModal = false">
+      <Card class="w-full max-w-md">
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <CardTitle>Withdrawal Request</CardTitle>
+            <Button variant="ghost" size="icon" @click="showWithdrawModal = false">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <div>
+            <label class="text-sm font-medium mb-2 block">Amount (MMK)</label>
+            <Input
+              v-model.number="withdrawAmount"
+              type="number"
+              placeholder="Enter amount"
+              min="1000"
+              step="1000"
+              :max="(balance?.balance || 0) - (balance?.locked_balance || 0)"
+            />
+            <p class="text-xs text-muted-foreground mt-1">
+              Available: {{ formatBalance((balance?.balance || 0) - (balance?.locked_balance || 0)) }} MMK
+            </p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium mb-2 block">Payment Method</label>
+            <select v-model="selectedPaymentMethod" class="w-full p-2 rounded-lg border bg-background">
+              <option value="">Select payment method</option>
+              <option v-for="method in paymentMethods" :key="method.id" :value="method.id">
+                {{ method.name }} - {{ method.account_number }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium mb-2 block">Note (Optional)</label>
+            <textarea
+              v-model="note"
+              class="w-full p-2 rounded-lg border bg-background"
+              rows="3"
+              placeholder="Add any notes..."
+            ></textarea>
+          </div>
+
+          <Button
+            @click="submitWithdraw"
+            class="w-full"
+            :disabled="isSubmitting || !withdrawAmount || !selectedPaymentMethod"
+          >
+            {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 definePageMeta({
-  keepalive: true
+  middleware: 'auth'
 })
 
-const demoBalance = ref(500000)
+const api = useApi()
 
-const paymentMethods = [
-  { id: 1, name: 'KBZ Pay' },
-  { id: 2, name: 'Wave Money' },
-  { id: 3, name: 'CB Pay' },
-  { id: 4, name: 'AYA Pay' }
-]
+const balance = ref<any>(null)
+const paymentRequests = ref<any[]>([])
+const transactions = ref<any[]>([])
+const paymentMethods = ref<any[]>([])
 
-const demoTransactions = [
-  { id: 1, type: 'deposit', method: 'KBZ Pay', amount: 100000, date: 'Jan 27, 10:30 AM', status: 'completed' },
-  { id: 2, type: 'withdraw', method: 'Wave Money', amount: 50000, date: 'Jan 26, 03:15 PM', status: 'completed' },
-  { id: 3, type: 'deposit', method: 'CB Pay', amount: 50000, date: 'Jan 25, 11:20 AM', status: 'pending' }
-]
+const showDepositModal = ref(false)
+const showWithdrawModal = ref(false)
+const depositAmount = ref<number>(0)
+const withdrawAmount = ref<number>(0)
+const selectedPaymentMethod = ref('')
+const transactionId = ref('')
+const note = ref('')
 
-const formatAmount = (n) => new Intl.NumberFormat('en-US').format(n || 0)
-const handleAction = (action) => {
-  alert(`${action.charAt(0).toUpperCase() + action.slice(1)} feature coming soon`)
+const isLoadingRequests = ref(false)
+const isLoadingTransactions = ref(false)
+const isSubmitting = ref(false)
+
+const loadBalance = async () => {
+  try {
+    const response: any = await api.get('/api/betting/2d/balance')
+    balance.value = response.data
+  } catch (error) {
+    console.error('Failed to load balance:', error)
+  }
 }
+
+const loadPaymentMethods = async () => {
+  try {
+    const response: any = await api.get('/api/payment-methods')
+    paymentMethods.value = response.data
+  } catch (error) {
+    console.error('Failed to load payment methods:', error)
+  }
+}
+
+const loadPaymentRequests = async () => {
+  isLoadingRequests.value = true
+  try {
+    const response: any = await api.get('/api/payment-requests')
+    paymentRequests.value = response.data
+  } catch (error) {
+    console.error('Failed to load payment requests:', error)
+  } finally {
+    isLoadingRequests.value = false
+  }
+}
+
+const loadTransactions = async () => {
+  isLoadingTransactions.value = true
+  try {
+    const response: any = await api.get('/api/wallet/transactions?limit=10')
+    transactions.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load transactions:', error)
+    transactions.value = []
+  } finally {
+    isLoadingTransactions.value = false
+  }
+}
+
+const submitDeposit = async () => {
+  if (!depositAmount.value || !selectedPaymentMethod.value) return
+
+  isSubmitting.value = true
+  try {
+    await api.post('/api/payment-requests', {
+      type: 'deposit',
+      amount: depositAmount.value,
+      payment_method_id: selectedPaymentMethod.value,
+      transaction_id: transactionId.value,
+      note: note.value
+    })
+
+    alert('Deposit request submitted successfully!')
+    showDepositModal.value = false
+    depositAmount.value = 0
+    selectedPaymentMethod.value = ''
+    transactionId.value = ''
+    note.value = ''
+    
+    await loadPaymentRequests()
+  } catch (error: any) {
+    alert(error.data?.message || 'Failed to submit deposit request')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const submitWithdraw = async () => {
+  if (!withdrawAmount.value || !selectedPaymentMethod.value) return
+
+  const availableBalance = (balance.value?.balance || 0) - (balance.value?.locked_balance || 0)
+  if (withdrawAmount.value > availableBalance) {
+    alert('Insufficient balance')
+    return
+  }
+
+  isSubmitting.value = true
+  try {
+    await api.post('/api/payment-requests', {
+      type: 'withdraw',
+      amount: withdrawAmount.value,
+      payment_method_id: selectedPaymentMethod.value,
+      note: note.value
+    })
+
+    alert('Withdrawal request submitted successfully!')
+    showWithdrawModal.value = false
+    withdrawAmount.value = 0
+    selectedPaymentMethod.value = ''
+    note.value = ''
+    
+    await loadPaymentRequests()
+  } catch (error: any) {
+    alert(error.data?.message || 'Failed to submit withdrawal request')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const getStatusClass = (status: string) => {
+  const classes: Record<string, string> = {
+    pending: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+    approved: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    rejected: 'bg-red-500/10 text-red-600 dark:text-red-400',
+    completed: 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+  }
+  return classes[status] || 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
+}
+
+const getTransactionLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    deposit: 'Deposit',
+    withdraw: 'Withdrawal',
+    bet_placed: 'Bet Placed',
+    bet_win: 'Bet Win',
+    bet_refund: 'Bet Refund'
+  }
+  return labels[type] || type
+}
+
+const formatBalance = (amount: number) => {
+  return new Intl.NumberFormat('en-US').format(amount || 0)
+}
+
+const formatDateTime = (date: string) => {
+  return new Date(date).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+onMounted(async () => {
+  await Promise.all([
+    loadBalance(),
+    loadPaymentMethods(),
+    loadPaymentRequests(),
+    loadTransactions()
+  ])
+})
+
+useHead({
+  title: 'Wallet - 2D3D'
+})
 </script>

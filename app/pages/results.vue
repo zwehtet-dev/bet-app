@@ -1,58 +1,95 @@
 <template>
   <div class="container mx-auto p-4 space-y-6">
-    
-    <!-- Tab Switcher -->
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl font-bold">Results</h1>
+      <p class="text-muted-foreground">View all lottery results</p>
+    </div>
+
+    <!-- Tabs -->
     <div class="flex gap-2">
-      <Button 
-        @click="activeTab = '2d'" 
+      <Button
+        @click="activeTab = '2d'"
         :variant="activeTab === '2d' ? 'default' : 'outline'"
-        class="flex-1"
         size="sm"
       >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-        </svg>
-        2D Results
+        2D
       </Button>
-      <Button 
-        @click="activeTab = '3d'" 
+      <Button
+        @click="activeTab = '3d'"
         :variant="activeTab === '3d' ? 'default' : 'outline'"
-        class="flex-1"
         size="sm"
       >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        3D Results
+        3D
       </Button>
     </div>
 
     <!-- 2D Results -->
-    <div v-if="activeTab === '2d'" class="space-y-3">
-      <Card v-for="result in demo2DResults" :key="result.date">
-        <CardContent class="p-4">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="text-sm font-semibold">{{ result.date }}</h3>
-              <p class="text-xs text-muted-foreground">{{ result.day }}</p>
+    <div v-if="activeTab === '2d'" class="space-y-4">
+      <!-- Today's Results -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Today's Results</CardTitle>
+          <CardDescription>{{ formatDate(new Date()) }}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+              <p class="text-sm text-muted-foreground mb-2">Morning (12:00 PM)</p>
+              <p class="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                {{ todayResults.morning || '--' }}
+              </p>
             </div>
-            <Badge v-if="result.isLive" variant="default" class="bg-green-500 hover:bg-green-600">
-              <span class="relative flex h-2 w-2 mr-1">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-              </span>
-              LIVE
-            </Badge>
+            <div class="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
+              <p class="text-sm text-muted-foreground mb-2">Evening (4:30 PM)</p>
+              <p class="text-4xl font-bold text-purple-600 dark:text-purple-400">
+                {{ todayResults.evening || '--' }}
+              </p>
+            </div>
           </div>
-          
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-muted rounded-lg p-4">
-              <p class="text-xs text-muted-foreground mb-2">12:01 PM</p>
-              <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ result.morning }}</p>
+        </CardContent>
+      </Card>
+
+      <!-- Recent 2D Results -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent 2D Results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SkeletonLoader v-if="isLoading2D" type="list-item" />
+          <div v-else-if="results2D.length > 0" class="space-y-2">
+            <div
+              v-for="result in results2D"
+              :key="result.session_code"
+              class="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+            >
+              <div>
+                <p class="font-medium">{{ result.session_type }} Session</p>
+                <p class="text-sm text-muted-foreground">
+                  {{ formatDate(result.session_date) }} • {{ formatTime(result.result_time) }}
+                </p>
+              </div>
+              <div class="text-3xl font-bold text-primary">{{ result.result_number }}</div>
             </div>
-            <div class="bg-muted rounded-lg p-4">
-              <p class="text-xs text-muted-foreground mb-2">4:30 PM</p>
-              <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ result.evening }}</p>
+          </div>
+          <p v-else class="text-center text-muted-foreground py-4">No results yet</p>
+        </CardContent>
+      </Card>
+
+      <!-- Statistics -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Hot Numbers (Last 30 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="grid grid-cols-5 gap-2">
+            <div
+              v-for="num in hotNumbers2D"
+              :key="num.number"
+              class="aspect-square rounded-lg bg-primary/10 flex flex-col items-center justify-center"
+            >
+              <span class="text-2xl font-bold text-primary">{{ num.number }}</span>
+              <span class="text-xs text-muted-foreground">{{ num.count }}x</span>
             </div>
           </div>
         </CardContent>
@@ -60,46 +97,195 @@
     </div>
 
     <!-- 3D Results -->
-    <div v-else class="space-y-3">
-      <Card v-for="result in demo3DResults" :key="result.date">
-        <CardContent class="p-4">
-          <div class="flex items-center justify-between">
-            <div class="flex-1">
-              <h3 class="text-sm font-semibold mb-1">{{ result.date }}</h3>
-              <p class="text-xs text-muted-foreground">{{ result.session }}</p>
+    <div v-else class="space-y-4">
+      <!-- Latest 3D Result -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Latest 3D Result</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div v-if="latest3D" class="text-center py-6">
+            <p class="text-sm text-muted-foreground mb-2">{{ latest3D.session_type }}</p>
+            <p class="text-6xl font-bold text-primary mb-2">{{ latest3D.result_number }}</p>
+            <p class="text-sm text-muted-foreground">
+              {{ formatDate(latest3D.session_date) }} • {{ formatTime(latest3D.result_time) }}
+            </p>
+          </div>
+          <p v-else class="text-center text-muted-foreground py-8">No result yet</p>
+        </CardContent>
+      </Card>
+
+      <!-- Recent 3D Results -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent 3D Results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SkeletonLoader v-if="isLoading3D" type="list-item" />
+          <div v-else-if="results3D.length > 0" class="space-y-3">
+            <div
+              v-for="result in results3D"
+              :key="result.session_code"
+              class="p-4 rounded-lg bg-muted/50"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <p class="font-medium">{{ result.session_type }}</p>
+                  <p class="text-sm text-muted-foreground">
+                    {{ formatDate(result.session_date) }}
+                  </p>
+                </div>
+                <div class="text-4xl font-bold text-primary">{{ result.result_number }}</div>
+              </div>
+              
+              <!-- Win Analysis -->
+              <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
+                <div class="text-center">
+                  <p class="text-xs text-muted-foreground">Exact</p>
+                  <p class="font-semibold text-green-600 dark:text-green-400">500x</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-xs text-muted-foreground">Permutation</p>
+                  <p class="font-semibold text-blue-600 dark:text-blue-400">10x</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-xs text-muted-foreground">Near</p>
+                  <p class="font-semibold text-purple-600 dark:text-purple-400">10x</p>
+                </div>
+              </div>
             </div>
-            <div class="text-right">
-              <p class="text-4xl font-bold text-purple-600 dark:text-purple-400">{{ result.number }}</p>
+          </div>
+          <p v-else class="text-center text-muted-foreground py-4">No results yet</p>
+        </CardContent>
+      </Card>
+
+      <!-- Statistics -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Hot Numbers (Last 6 Months)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="grid grid-cols-4 gap-2">
+            <div
+              v-for="num in hotNumbers3D"
+              :key="num.number"
+              class="aspect-square rounded-lg bg-primary/10 flex flex-col items-center justify-center"
+            >
+              <span class="text-xl font-bold text-primary">{{ num.number }}</span>
+              <span class="text-xs text-muted-foreground">{{ num.count }}x</span>
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
-
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { Card, CardContent } from '@/components/ui/card'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
-definePageMeta({
-  keepalive: true
-})
+const { getRecentResults: get2DResults } = use2DBetting()
+const { getRecentResults: get3DResults } = use3DBetting()
 
 const activeTab = ref('2d')
+const results2D = ref<any[]>([])
+const results3D = ref<any[]>([])
+const hotNumbers2D = ref<any[]>([])
+const hotNumbers3D = ref<any[]>([])
+const isLoading2D = ref(false)
+const isLoading3D = ref(false)
 
-const demo2DResults = [
-  { date: 'Jan 28, 2026', day: 'Today', morning: '47', evening: '82', isLive: true },
-  { date: 'Jan 27, 2026', day: 'Yesterday', morning: '35', evening: '91', isLive: false },
-  { date: 'Jan 26, 2026', day: 'Sunday', morning: '12', evening: '56', isLive: false }
-]
+const todayResults = computed(() => {
+  const today = new Date().toDateString()
+  const todayResults = results2D.value.filter(r => 
+    new Date(r.session_date).toDateString() === today
+  )
+  
+  return {
+    morning: todayResults.find(r => r.session_type === 'morning')?.result_number,
+    evening: todayResults.find(r => r.session_type === 'evening')?.result_number
+  }
+})
 
-const demo3DResults = [
-  { date: 'Jan 16, 2026', session: 'Second Draw', number: '456' },
-  { date: 'Jan 1, 2026', session: 'First Draw', number: '789' },
-  { date: 'Dec 16, 2025', session: 'Second Draw', number: '123' }
-]
+const latest3D = computed(() => {
+  return results3D.value[0] || null
+})
+
+const load2DResults = async () => {
+  isLoading2D.value = true
+  try {
+    results2D.value = await get2DResults(30)
+    
+    // Calculate hot numbers
+    const numberCount: Record<string, number> = {}
+    results2D.value.forEach(r => {
+      numberCount[r.result_number] = (numberCount[r.result_number] || 0) + 1
+    })
+    
+    hotNumbers2D.value = Object.entries(numberCount)
+      .map(([number, count]) => ({ number, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  } catch (error) {
+    console.error('Failed to load 2D results:', error)
+  } finally {
+    isLoading2D.value = false
+  }
+}
+
+const load3DResults = async () => {
+  isLoading3D.value = true
+  try {
+    results3D.value = await get3DResults(20)
+    
+    // Calculate hot numbers
+    const numberCount: Record<string, number> = {}
+    results3D.value.forEach(r => {
+      numberCount[r.result_number] = (numberCount[r.result_number] || 0) + 1
+    })
+    
+    hotNumbers3D.value = Object.entries(numberCount)
+      .map(([number, count]) => ({ number, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+  } catch (error) {
+    console.error('Failed to load 3D results:', error)
+  } finally {
+    isLoading3D.value = false
+  }
+}
+
+const formatDate = (date: string | Date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+const formatTime = (time: string) => {
+  return new Date(time).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+watch(activeTab, (newTab) => {
+  if (newTab === '2d' && results2D.value.length === 0) {
+    load2DResults()
+  } else if (newTab === '3d' && results3D.value.length === 0) {
+    load3DResults()
+  }
+})
+
+onMounted(() => {
+  load2DResults()
+})
+
+useHead({
+  title: 'Results - 2D3D'
+})
 </script>

@@ -6,8 +6,8 @@
       <CardHeader>
         <div class="flex items-center justify-between">
           <div>
-            <CardTitle class="text-lg">{{ session.session_type }} Draw</CardTitle>
-            <CardDescription>{{ formatDate(session.start_date) }} - {{ formatDate(session.end_date) }}</CardDescription>
+            <CardTitle class="text-lg">{{ session.session_type }} Session</CardTitle>
+            <CardDescription>{{ formatDate(session.session_date) }}</CardDescription>
           </div>
           <div :class="[
             'px-3 py-1 rounded-full text-xs font-medium',
@@ -18,22 +18,24 @@
         </div>
       </CardHeader>
       <CardContent class="space-y-3">
-        <div class="grid grid-cols-2 gap-3 text-sm">
+        <div class="grid grid-cols-3 gap-3 text-sm">
           <div>
-            <p class="text-muted-foreground">Betting Period</p>
-            <p class="font-medium">{{ formatDate(session.start_date) }}</p>
-            <p class="text-xs text-muted-foreground">to {{ formatDate(session.end_date) }}</p>
+            <p class="text-muted-foreground">Opens</p>
+            <p class="font-medium">{{ formatTime(session.open_time) }}</p>
           </div>
           <div>
-            <p class="text-muted-foreground">Result Date</p>
-            <p class="font-medium">{{ formatDate(session.session_date) }}</p>
-            <p class="text-xs text-muted-foreground">{{ formatTime(session.result_time) }}</p>
+            <p class="text-muted-foreground">Closes</p>
+            <p class="font-medium">{{ formatTime(session.close_time) }}</p>
+          </div>
+          <div>
+            <p class="text-muted-foreground">Result</p>
+            <p class="font-medium">{{ formatTime(session.result_time) }}</p>
           </div>
         </div>
         
         <!-- Countdown Timer -->
         <div v-if="session.status === 'open'" class="p-3 rounded-lg bg-primary/10 text-center">
-          <p class="text-xs text-muted-foreground mb-1">Time Until Close</p>
+          <p class="text-xs text-muted-foreground mb-1">Time Remaining</p>
           <p class="text-2xl font-bold text-primary">{{ countdown }}</p>
         </div>
       </CardContent>
@@ -51,81 +53,21 @@
       </CardHeader>
     </Card>
 
-    <!-- Win Types Info -->
+    <!-- Number Grid -->
     <Card>
       <CardHeader>
-        <CardTitle>Win Types & Payouts</CardTitle>
+        <CardTitle>Select Numbers</CardTitle>
+        <CardDescription>Tap numbers to add to your bet</CardDescription>
       </CardHeader>
-      <CardContent class="space-y-3">
-        <div class="grid gap-3">
-          <div class="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-            <div>
-              <p class="font-semibold text-green-600 dark:text-green-400">Exact Match</p>
-              <p class="text-xs text-muted-foreground">Your number matches exactly</p>
-            </div>
-            <span class="text-2xl font-bold text-green-600 dark:text-green-400">500x</span>
-          </div>
-          <div class="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-            <div>
-              <p class="font-semibold text-blue-600 dark:text-blue-400">Permutation</p>
-              <p class="text-xs text-muted-foreground">Same digits, different order</p>
-            </div>
-            <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">10x</span>
-          </div>
-          <div class="flex items-center justify-between p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-            <div>
-              <p class="font-semibold text-purple-600 dark:text-purple-400">Near Match</p>
-              <p class="text-xs text-muted-foreground">Result ± 1 (e.g., 122 or 124 for 123)</p>
-            </div>
-            <span class="text-2xl font-bold text-purple-600 dark:text-purple-400">10x</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <!-- Number Input -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Enter Numbers</CardTitle>
-        <CardDescription>Enter 3-digit numbers (000-999)</CardDescription>
-      </CardHeader>
-      <CardContent class="space-y-4">
-        <div class="flex gap-2">
-          <Input
-            v-model="numberInput"
-            type="text"
-            placeholder="000"
-            maxlength="3"
-            class="text-center text-2xl font-bold"
-            @keyup.enter="addNumber"
-          />
-          <Input
-            v-model.number="amountInput"
-            type="number"
-            placeholder="Amount"
-            min="100"
-            max="100000"
-            class="text-center text-lg font-semibold"
-          />
-          <Button @click="addNumber" size="lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-          </Button>
-        </div>
-
-        <!-- Quick Amount Buttons -->
-        <div class="grid grid-cols-4 gap-2">
-          <Button
-            v-for="amount in [1000, 2000, 5000, 10000]"
-            :key="amount"
-            @click="amountInput = amount"
-            :variant="amountInput === amount ? 'default' : 'outline'"
-            size="sm"
-          >
-            {{ formatBalance(amount) }}
-          </Button>
-        </div>
+      <CardContent>
+        <SkeletonLoader v-if="isLoadingDigits" type="card" />
+        <VirtualNumberGrid
+          v-else
+          ref="gridRef"
+          :digit-status="digitStatusMap"
+          :blocked-numbers="session?.blocked_numbers || []"
+          @select="handleNumberSelect"
+        />
       </CardContent>
     </Card>
 
@@ -139,22 +81,18 @@
       </CardHeader>
       <CardContent class="space-y-3">
         <div v-for="(item, index) in betCart" :key="index" class="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-          <div class="flex-shrink-0 w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
-            <span class="text-2xl font-bold text-primary">{{ item.number }}</span>
+          <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <span class="text-lg font-bold text-primary">{{ item.number }}</span>
           </div>
-          <div class="flex-1 space-y-1">
+          <div class="flex-1">
             <Input
               v-model.number="item.amount"
               type="number"
               placeholder="Amount"
               min="100"
-              max="100000"
+              max="50000"
               class="w-full"
             />
-            <div class="text-xs text-muted-foreground space-y-0.5">
-              <div>Exact: {{ formatBalance(item.amount * 500) }} MMK</div>
-              <div>Perm/Near: {{ formatBalance(item.amount * 10) }} MMK</div>
-            </div>
           </div>
           <Button variant="ghost" size="icon" @click="removeFromCart(index)">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,8 +108,8 @@
             <span class="font-semibold">{{ formatBalance(totalAmount) }} MMK</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-muted-foreground">Max Win (Exact)</span>
-            <span class="font-semibold text-green-600 dark:text-green-400">{{ formatBalance(maxWin) }} MMK</span>
+            <span class="text-muted-foreground">Potential Win (80x)</span>
+            <span class="font-semibold text-green-600 dark:text-green-400">{{ formatBalance(potentialWin) }} MMK</span>
           </div>
         </div>
 
@@ -209,7 +147,7 @@
               <p class="font-medium">{{ result.session_type }} - {{ formatDate(result.session_date) }}</p>
               <p class="text-xs text-muted-foreground">{{ formatTime(result.result_time) }}</p>
             </div>
-            <div class="text-3xl font-bold text-primary">{{ result.result_number }}</div>
+            <div class="text-2xl font-bold text-primary">{{ result.result_number }}</div>
           </div>
         </div>
         <p v-else class="text-center text-muted-foreground py-4">No results yet</p>
@@ -223,41 +161,52 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import VirtualNumberGrid from '@/components/VirtualNumberGrid.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 definePageMeta({
   middleware: 'auth'
 })
 
-const { getCurrentSession, placeBet: placeBetApi, getRecentResults } = use3DBetting()
+const { getCurrentSession, getAvailableDigits, placeBet: placeBetApi, getRecentResults } = use2DBetting()
+const { user } = useAuth()
 const { connect, disconnect } = useWebSocket()
 
 const session = ref<any>(null)
 const balance = ref<any>(null)
+const digitStatus = ref<any[]>([])
 const recentResults = ref<any[]>([])
 const betCart = ref<Array<{ number: string, amount: number }>>([])
-const numberInput = ref('')
-const amountInput = ref(1000)
+const gridRef = ref<any>(null)
 const countdown = ref('')
 const countdownInterval = ref<any>(null)
 
 const isLoadingSession = ref(false)
 const isLoadingBalance = ref(false)
+const isLoadingDigits = ref(false)
 const isLoadingResults = ref(false)
 const isPlacingBet = ref(false)
 
 // Computed
+const digitStatusMap = computed(() => {
+  const map: Record<string, any> = {}
+  digitStatus.value.forEach((digit: any) => {
+    map[digit.digit] = digit
+  })
+  return map
+})
+
 const totalAmount = computed(() => {
   return betCart.value.reduce((sum, item) => sum + (item.amount || 0), 0)
 })
 
-const maxWin = computed(() => {
-  return totalAmount.value * 500
+const potentialWin = computed(() => {
+  return totalAmount.value * 80
 })
 
 const canPlaceBet = computed(() => {
   return betCart.value.length > 0 &&
-    betCart.value.every(item => item.amount >= 100 && item.amount <= 100000) &&
+    betCart.value.every(item => item.amount >= 100 && item.amount <= 50000) &&
     totalAmount.value <= (balance.value?.available_balance || 0) &&
     session.value?.status === 'open'
 })
@@ -279,12 +228,24 @@ const loadBalance = async () => {
   isLoadingBalance.value = true
   try {
     const api = useApi()
-    const response: any = await api.get('/api/betting/3d/balance')
+    const response: any = await api.get('/api/betting/2d/balance')
     balance.value = response.data
   } catch (error) {
     console.error('Failed to load balance:', error)
   } finally {
     isLoadingBalance.value = false
+  }
+}
+
+const loadDigitStatus = async () => {
+  isLoadingDigits.value = true
+  try {
+    const data = await getAvailableDigits()
+    digitStatus.value = data.digits
+  } catch (error) {
+    console.error('Failed to load digit status:', error)
+  } finally {
+    isLoadingDigits.value = false
   }
 }
 
@@ -299,27 +260,13 @@ const loadRecentResults = async () => {
   }
 }
 
-const addNumber = () => {
-  // Validate number
-  if (!/^\d{3}$/.test(numberInput.value)) {
-    alert('Please enter a valid 3-digit number (000-999)')
-    return
+const handleNumberSelect = (number: string) => {
+  const index = betCart.value.findIndex(item => item.number === number)
+  if (index > -1) {
+    betCart.value.splice(index, 1)
+  } else {
+    betCart.value.push({ number, amount: 1000 })
   }
-
-  // Check if already in cart
-  if (betCart.value.some(item => item.number === numberInput.value)) {
-    alert('This number is already in your cart')
-    return
-  }
-
-  // Add to cart
-  betCart.value.push({
-    number: numberInput.value,
-    amount: amountInput.value || 1000
-  })
-
-  // Clear input
-  numberInput.value = ''
 }
 
 const removeFromCart = (index: number) => {
@@ -328,6 +275,7 @@ const removeFromCart = (index: number) => {
 
 const clearCart = () => {
   betCart.value = []
+  gridRef.value?.clearSelection()
 }
 
 const placeBet = async () => {
@@ -342,10 +290,12 @@ const placeBet = async () => {
 
     const response = await placeBetApi(items)
     
+    // Show success message
     alert(`Bet placed successfully! Slip Number: ${response.data.slip_number}`)
     
+    // Clear cart and reload data
     clearCart()
-    await loadBalance()
+    await Promise.all([loadBalance(), loadDigitStatus()])
   } catch (error: any) {
     alert(error.data?.message || 'Failed to place bet. Please try again.')
   } finally {
@@ -371,19 +321,15 @@ const startCountdown = () => {
       return
     }
 
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24))
     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000)
 
-    if (days > 0) {
-      countdown.value = `${days}d ${hours}h ${minutes}m`
-    } else {
-      countdown.value = `${hours}h ${minutes}m`
-    }
+    countdown.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   }
 
   updateCountdown()
-  countdownInterval.value = setInterval(updateCountdown, 60000) // Update every minute
+  countdownInterval.value = setInterval(updateCountdown, 1000)
 }
 
 const formatBalance = (amount: number) => {
@@ -404,11 +350,14 @@ onMounted(async () => {
   await Promise.all([
     loadSession(),
     loadBalance(),
+    loadDigitStatus(),
     loadRecentResults()
   ])
 
+  // Listen for WebSocket events
   window.addEventListener('bet-updated', () => {
     loadBalance()
+    loadDigitStatus()
   })
 
   window.addEventListener('session-resulted', () => {
@@ -433,6 +382,6 @@ onUnmounted(() => {
 })
 
 useHead({
-  title: '3D Betting - 2D3D'
+  title: '2D Betting - 2D3D'
 })
 </script>

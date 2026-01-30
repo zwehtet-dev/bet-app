@@ -2,7 +2,7 @@
   <div class="container mx-auto p-4 space-y-6">
     
     <!-- Profile Picture -->
-    <div class="flex flex-col items-center gap-4">
+    <!-- <div class="flex flex-col items-center gap-4">
       <Avatar class="h-24 w-24">
         <AvatarFallback class="bg-primary text-primary-foreground text-2xl font-bold">
           {{ getInitials(form.name) }}
@@ -15,16 +15,17 @@
       >
         Change Photo
       </Button>
-    </div>
+    </div> -->
 
     <!-- Edit Form -->
     
     <div class="pt-6 space-y-4">
       <div class="space-y-2">
-        <label class="text-sm font-medium">Full Name</label>
+        <label class="text-sm font-medium">User Name</label>
         <Input 
-          v-model="form.name"
+          v-model="form.username"
           placeholder="Enter your name"
+          :disabled="isLoading"
         />
       </div>
 
@@ -34,6 +35,7 @@
           v-model="form.email"
           type="email"
           placeholder="Enter your email"
+          :disabled="isLoading"
         />
       </div>
 
@@ -43,17 +45,18 @@
           v-model="form.phone"
           type="tel"
           placeholder="Enter your phone number"
+          :disabled="isLoading"
         />
       </div>
 
-      <div class="space-y-2">
+      <!-- <div class="space-y-2">
         <label class="text-sm font-medium">Role</label>
         <Input 
           v-model="form.role"
           disabled
           class="bg-muted"
         />
-      </div>
+      </div> -->
     </div>
 
     <!-- Save Button -->
@@ -61,8 +64,9 @@
       @click="handleSave"
       class="w-full"
       size="lg"
+      :disabled="isLoading"
     >
-      Save Changes
+      {{ isLoading ? 'Saving...' : 'Save Changes' }}
     </Button>
 
     <!-- Toast -->
@@ -82,26 +86,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 definePageMeta({
+  middleware: 'auth',
   keepalive: true
 })
 
+const { user, fetchUser } = useAuth()
+const api = useApi()
+
 const form = ref({
-  name: 'Demo User',
-  email: 'demo@2d3d.com',
-  phone: '09-123-456-789',
-  role: 'Agent'
+  name: '',
+  email: '',
+  phone: '',
+  role: ''
 })
 
+const isLoading = ref(false)
 const toast = ref(null)
 
 const getInitials = (name) => {
+  if (!name) return '?'
   return name
     .split(' ')
     .map(word => word[0])
@@ -115,10 +125,46 @@ const showToast = (msg, type = 'success') => {
   setTimeout(() => toast.value = null, 3000)
 }
 
-const handleSave = () => {
-  showToast('Profile updated successfully', 'success')
-  setTimeout(() => navigateTo('/profile'), 1000)
+const loadUserData = () => {
+  if (user.value) {
+    form.value = {
+      username: user.value.username || '',
+      email: user.value.email || '',
+      phone: user.value.phone || '',
+      role: user.value.role?.toUpperCase() || 'USER'
+    }
+  }
 }
+
+const handleSave = async () => {
+  isLoading.value = true
+  try {
+    const response = await api.put('/api/auth/profile', {
+      username: form.value.username,
+      email: form.value.email,
+      phone: form.value.phone
+    })
+    
+    if (response.success) {
+      // Refresh user data
+      await fetchUser()
+      showToast('Profile updated successfully', 'success')
+      setTimeout(() => navigateTo('/profile'), 1000)
+    }
+  } catch (error) {
+    showToast(error.data?.message || 'Failed to update profile', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadUserData()
+})
+
+useHead({
+  title: 'Edit Profile - 2D3D'
+})
 </script>
 
 <style scoped>

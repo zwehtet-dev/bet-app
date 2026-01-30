@@ -12,14 +12,19 @@
       </CardHeader>
       
       <CardContent class="space-y-4">
+        <div v-if="errorMessage" class="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+          {{ errorMessage }}
+        </div>
+
         <div class="space-y-2">
-          <label for="phone" class="text-sm font-medium">Phone Number</label>
+          <label for="identifier" class="text-sm font-medium">Phone / Email </label>
           <Input
-            id="phone"
-            v-model="phone"
-            type="tel"
-            placeholder="09xxxxxxxxx"
+            id="identifier"
+            v-model="identifier"
+            type="text"
+            placeholder="09xxxxxxxxx or email or username"
             class="w-full"
+            @keyup.enter="handleLogin"
           />
         </div>
 
@@ -31,6 +36,7 @@
             type="password"
             placeholder="Enter your password"
             class="w-full"
+            @keyup.enter="handleLogin"
           />
         </div>
 
@@ -55,7 +61,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -66,19 +72,34 @@ definePageMeta({
   layout: false
 })
 
-const phone = ref('')
+const { login } = useAuth()
+const identifier = ref('')
 const password = ref('')
 const isLoading = ref(false)
+const errorMessage = ref('')
 
 const handleLogin = async () => {
+  if (!identifier.value || !password.value) {
+    errorMessage.value = 'Please enter your phone/email/username and password'
+    return
+  }
+
   isLoading.value = true
+  errorMessage.value = ''
   
-  // Simulate API call
-  setTimeout(() => {
-    console.log('Login:', { phone: phone.value, password: password.value })
+  try {
+    const result = await login(identifier.value, password.value)
+    
+    if (result?.success) {
+      navigateTo('/')
+    } else {
+      errorMessage.value = result?.error || 'Login failed. Please try again.'
+    }
+  } catch (error: any) {
+    errorMessage.value = error.message || 'An error occurred. Please try again.'
+  } finally {
     isLoading.value = false
-    navigateTo('/')
-  }, 1000)
+  }
 }
 
 useHead({

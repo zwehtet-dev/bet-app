@@ -57,7 +57,7 @@ const selectLanguage = (code: string) => {
 
 <template>
   <div class="min-h-screen bg-background">
-    <div class="w-full min-h-screen max-w-[480px] mx-auto flex flex-col bg-background">
+    <div class="w-full min-h-screen max-w-[480px] mx-auto flex flex-col bg-background" >
       
       <!-- Header -->
       <header class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -85,10 +85,10 @@ const selectLanguage = (code: string) => {
             </button>
 
             <!-- Language Dropdown -->
-            <DropdownMenu>
+            <!-- <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-3 gap-1">
-                  <span class="text-lg">{{ currentLanguage.flag }}</span>
+                  <span class="text-lg">{{ currentLanguage?.flag }}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" class="w-40">
@@ -102,7 +102,7 @@ const selectLanguage = (code: string) => {
                   <span class="text-sm">{{ lang.name }}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> -->
 
             <!-- Notification Button -->
             <NuxtLink to="/notifications" class="relative inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10">

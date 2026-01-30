@@ -6,16 +6,17 @@
       <div class="flex items-center gap-4">
         <Avatar class="h-16 w-16">
           <AvatarFallback class="bg-primary text-primary-foreground text-xl font-bold">
-            DU
+            {{ getInitials(user?.username) }}
           </AvatarFallback>
         </Avatar>
         <div class="flex-1">
-          <h1 class="text-lg font-semibold">Demo User</h1>
-          <p class="text-sm text-muted-foreground">demo@2d3d.com</p>
+          <h1 class="text-lg font-semibold">{{ user?.username || 'Loading...' }}</h1>
+          <p class="text-sm text-muted-foreground">{{ user?.email || '' }}</p>
+          <p class="text-sm text-muted-foreground">{{ user?.phone || '' }}</p>
         </div>
       </div>
       <div class="flex items-center">
-        <Badge>Agent</Badge>
+        <Badge>{{ user?.role?.toUpperCase() || 'USER' }}</Badge>
       </div>
     </div>
 
@@ -126,20 +127,39 @@ import Badge from '~/components/ui/badge/Badge.vue'
 import { UserRoundPen } from 'lucide-vue-next'
 
 definePageMeta({
+  middleware: 'auth',
   keepalive: true
 })
 
+const { user, logout } = useAuth()
+
 const toast = ref(null)
+
+const getInitials = (name) => {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 const showToast = (msg, type = 'success') => {
   toast.value = { msg, type }
   setTimeout(() => toast.value = null, 3000)
 }
 
-const handleLogout = () => {
-  showToast('Logged out successfully', 'success')
-  setTimeout(() => navigateTo('/login'), 1000)
+const handleLogout = async () => {
+  if (confirm('Are you sure you want to logout?')) {
+    await logout()
+    showToast('Logged out successfully', 'success')
+  }
 }
+
+useHead({
+  title: 'Profile - 2D3D'
+})
 </script>
 
 <style scoped>

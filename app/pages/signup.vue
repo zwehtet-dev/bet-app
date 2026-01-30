@@ -7,18 +7,33 @@
         </div>
         <CardTitle class="text-2xl font-semibold">Create Account</CardTitle>
         <CardDescription>
-          Enter your information to get started
+          Sign up to start betting
         </CardDescription>
       </CardHeader>
       
       <CardContent class="space-y-4">
+        <div v-if="errorMessage" class="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+          {{ errorMessage }}
+        </div>
+
         <div class="space-y-2">
-          <label for="name" class="text-sm font-medium">Full Name</label>
+          <label for="username" class="text-sm font-medium">Username</label>
           <Input
-            id="name"
-            v-model="name"
+            id="username"
+            v-model="formData.username"
             type="text"
-            placeholder="Enter your name"
+            placeholder="johndoe"
+            class="w-full"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label for="email" class="text-sm font-medium">Email</label>
+          <Input
+            id="email"
+            v-model="formData.email"
+            type="email"
+            placeholder="john@example.com"
             class="w-full"
           />
         </div>
@@ -27,7 +42,7 @@
           <label for="phone" class="text-sm font-medium">Phone Number</label>
           <Input
             id="phone"
-            v-model="phone"
+            v-model="formData.phone"
             type="tel"
             placeholder="09xxxxxxxxx"
             class="w-full"
@@ -38,21 +53,22 @@
           <label for="password" class="text-sm font-medium">Password</label>
           <Input
             id="password"
-            v-model="password"
+            v-model="formData.password"
             type="password"
-            placeholder="Create a password"
+            placeholder="Minimum 8 characters"
             class="w-full"
           />
         </div>
 
         <div class="space-y-2">
-          <label for="confirmPassword" class="text-sm font-medium">Confirm Password</label>
+          <label for="password_confirmation" class="text-sm font-medium">Confirm Password</label>
           <Input
-            id="confirmPassword"
-            v-model="confirmPassword"
+            id="password_confirmation"
+            v-model="formData.password_confirmation"
             type="password"
-            placeholder="Confirm your password"
+            placeholder="Re-enter password"
             class="w-full"
+            @keyup.enter="handleSignup"
           />
         </div>
 
@@ -61,7 +77,7 @@
           class="w-full"
           :disabled="isLoading"
         >
-          {{ isLoading ? 'Creating account...' : 'Sign Up' }}
+          {{ isLoading ? 'Creating Account...' : 'Sign Up' }}
         </Button>
 
         <Separator />
@@ -77,7 +93,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -88,30 +104,80 @@ definePageMeta({
   layout: false
 })
 
-const name = ref('')
-const phone = ref('')
-const password = ref('')
-const confirmPassword = ref('')
+const api = useApi()
+
+const formData = ref({
+  name: '',
+  username: '',
+  email: '',
+  phone: '',
+  password: '',
+  password_confirmation: ''
+})
+
 const isLoading = ref(false)
+const errorMessage = ref('')
 
 const handleSignup = async () => {
-  if (password.value !== confirmPassword.value) {
-    alert('Passwords do not match')
+  errorMessage.value = ''
+
+  // Validation
+  if ( !formData.value.username || !formData.value.email || 
+      !formData.value.phone || !formData.value.password || !formData.value.password_confirmation) {
+    errorMessage.value = 'All fields are required'
+    return
+  }
+
+  if (formData.value.password.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters'
+    return
+  }
+
+  if (formData.value.password !== formData.value.password_confirmation) {
+    errorMessage.value = 'Passwords do not match'
+    return
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.value.email)) {
+    errorMessage.value = 'Please enter a valid email address'
+    return
+  }
+
+  // Phone validation (Myanmar format)
+  const phoneRegex = /^09\d{7,9}$/
+  if (!phoneRegex.test(formData.value.phone)) {
+    errorMessage.value = 'Please enter a valid phone number (09xxxxxxxxx)'
     return
   }
 
   isLoading.value = true
   
-  // Simulate API call
-  setTimeout(() => {
-    console.log('Signup:', { 
-      name: name.value, 
-      phone: phone.value, 
-      password: password.value 
-    })
+  try {
+    const response: any = await api.post('/api/auth/register', formData.value)
+    
+    if (response.success) {
+      // Auto-login after registration
+      const { user } = useAuth()
+      user.value = response.data.user
+      
+      alert('Account created successfully!')
+      navigateTo('/')
+    } else {
+      errorMessage.value = response.message || 'Registration failed. Please try again.'
+    }
+  } catch (error: any) {
+    if (error.data?.errors) {
+      // Laravel validation errors
+      const errors = Object.values(error.data.errors).flat()
+      errorMessage.value = errors[0] as string
+    } else {
+      errorMessage.value = error.data?.message || 'An error occurred. Please try again.'
+    }
+  } finally {
     isLoading.value = false
-    navigateTo('/login')
-  }, 1000)
+  }
 }
 
 useHead({
