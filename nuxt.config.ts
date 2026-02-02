@@ -10,7 +10,8 @@ export default defineNuxtConfig({
   
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'https://2d3d.pnpmyanmar.com'
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'https://2d3d.pnpmyanmar.com',
+      wsUrl: process.env.NUXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws'
     }
   },
   

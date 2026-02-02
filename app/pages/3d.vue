@@ -1,249 +1,162 @@
 <template>
   <div class="container mx-auto p-4 space-y-6">
     <!-- Session Info -->
-    <SkeletonLoader v-if="isLoadingSession" type="card" />
-    <Card v-else-if="session">
-      <CardHeader>
-        <div class="flex items-center justify-between">
+    <Card v-if="session">
+      <CardContent class="pt-6">
+        <div class="flex justify-between items-center">
           <div>
-            <CardTitle class="text-lg">{{ session.session_type }} Draw</CardTitle>
-            <CardDescription>{{ formatDate(session.start_date) }} - {{ formatDate(session.end_date) }}</CardDescription>
+            <p class="text-sm text-muted-foreground">Session</p>
+            <p class="font-semibold">{{ session.session_code }} - {{ session.session_type }}</p>
           </div>
-          <div :class="[
-            'px-3 py-1 rounded-full text-xs font-medium',
-            session.status === 'open' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
-          ]">
-            {{ session.status.toUpperCase() }}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent class="space-y-3">
-        <div class="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p class="text-muted-foreground">Betting Period</p>
-            <p class="font-medium">{{ formatDate(session.start_date) }}</p>
-            <p class="text-xs text-muted-foreground">to {{ formatDate(session.end_date) }}</p>
-          </div>
-          <div>
-            <p class="text-muted-foreground">Result Date</p>
-            <p class="font-medium">{{ formatDate(session.session_date) }}</p>
-            <p class="text-xs text-muted-foreground">{{ formatTime(session.result_time) }}</p>
-          </div>
-        </div>
-        
-        <!-- Countdown Timer -->
-        <div v-if="session.status === 'open'" class="p-3 rounded-lg bg-primary/10 text-center">
-          <p class="text-xs text-muted-foreground mb-1">Time Until Close</p>
-          <p class="text-2xl font-bold text-primary">{{ countdown }}</p>
-        </div>
-      </CardContent>
-    </Card>
-
-    <!-- Balance Card -->
-    <SkeletonLoader v-if="isLoadingBalance" type="balance" />
-    <Card v-else-if="balance">
-      <CardHeader>
-        <CardDescription>Available Balance</CardDescription>
-        <CardTitle class="text-3xl font-bold">
-          {{ formatBalance(balance.available_balance) }}
-          <span class="text-lg text-muted-foreground font-normal">MMK</span>
-        </CardTitle>
-      </CardHeader>
-    </Card>
-
-    <!-- Win Types Info -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Win Types & Payouts</CardTitle>
-      </CardHeader>
-      <CardContent class="space-y-3">
-        <div class="grid gap-3">
-          <div class="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-            <div>
-              <p class="font-semibold text-green-600 dark:text-green-400">Exact Match</p>
-              <p class="text-xs text-muted-foreground">Your number matches exactly</p>
-            </div>
-            <span class="text-2xl font-bold text-green-600 dark:text-green-400">500x</span>
-          </div>
-          <div class="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-            <div>
-              <p class="font-semibold text-blue-600 dark:text-blue-400">Permutation</p>
-              <p class="text-xs text-muted-foreground">Same digits, different order</p>
-            </div>
-            <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">10x</span>
-          </div>
-          <div class="flex items-center justify-between p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-            <div>
-              <p class="font-semibold text-purple-600 dark:text-purple-400">Near Match</p>
-              <p class="text-xs text-muted-foreground">Result ± 1 (e.g., 122 or 124 for 123)</p>
-            </div>
-            <span class="text-2xl font-bold text-purple-600 dark:text-purple-400">10x</span>
+          <div class="text-right">
+            <p class="text-sm text-muted-foreground">Balance</p>
+            <p class="font-bold text-lg">{{ formatBalance(balance) }} MMK</p>
           </div>
         </div>
       </CardContent>
     </Card>
 
-    <!-- Number Input -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Enter Numbers</CardTitle>
-        <CardDescription>Enter 3-digit numbers (000-999)</CardDescription>
-      </CardHeader>
-      <CardContent class="space-y-4">
-        <div class="flex gap-2">
-          <Input
-            v-model="numberInput"
-            type="text"
-            placeholder="000"
-            maxlength="3"
-            class="text-center text-2xl font-bold"
-            @keyup.enter="addNumber"
-          />
-          <Input
-            v-model.number="amountInput"
-            type="number"
-            placeholder="Amount"
-            min="100"
-            max="100000"
-            class="text-center text-lg font-semibold"
-          />
-          <Button @click="addNumber" size="lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-          </Button>
-        </div>
-
-        <!-- Quick Amount Buttons -->
-        <div class="grid grid-cols-4 gap-2">
-          <Button
-            v-for="amount in [1000, 2000, 5000, 10000]"
-            :key="amount"
-            @click="amountInput = amount"
-            :variant="amountInput === amount ? 'default' : 'outline'"
-            size="sm"
-          >
-            {{ formatBalance(amount) }}
-          </Button>
-        </div>
+    <!-- Loading State -->
+    <Card v-if="isLoadingSession && !session">
+      <CardContent class="pt-6 text-center">
+        <p class="text-muted-foreground">Loading session...</p>
       </CardContent>
     </Card>
 
-    <!-- Bet Cart -->
-    <Card v-if="betCart.length > 0">
-      <CardHeader>
-        <div class="flex items-center justify-between">
-          <CardTitle>Your Bets ({{ betCart.length }})</CardTitle>
-          <Button variant="ghost" size="sm" @click="clearCart">Clear All</Button>
-        </div>
-      </CardHeader>
-      <CardContent class="space-y-3">
-        <div v-for="(item, index) in betCart" :key="index" class="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-          <div class="flex-shrink-0 w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
-            <span class="text-2xl font-bold text-primary">{{ item.number }}</span>
-          </div>
-          <div class="flex-1 space-y-1">
+    <!-- No Session -->
+    <Card v-if="!isLoadingSession && !session">
+      <CardContent class="pt-6 text-center">
+        <p class="text-muted-foreground">No active 3D session available</p>
+      </CardContent>
+    </Card>
+
+    <template v-if="session">
+
+      <!-- Number Input -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-base">Enter Numbers</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-3">
+          <div class="flex gap-2">
             <Input
-              v-model.number="item.amount"
+              v-model="numberInput"
+              type="text"
+              placeholder="000"
+              maxlength="3"
+              class="text-center text-3xl font-bold h-14"
+              @keyup.enter="addNumber"
+            />
+            <Input
+              v-model.number="amountInput"
               type="number"
               placeholder="Amount"
               min="100"
               max="100000"
-              class="w-full"
+              class="text-center text-xl font-semibold h-14"
             />
-            <div class="text-xs text-muted-foreground space-y-0.5">
-              <div>Exact: {{ formatBalance(item.amount * 500) }} MMK</div>
-              <div>Perm/Near: {{ formatBalance(item.amount * 10) }} MMK</div>
+            <Button @click="addNumber" size="lg" class="h-14 px-6">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+            </Button>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2">
+            <Button
+              v-for="amt in [1000, 2000, 5000, 10000]"
+              :key="amt"
+              @click="amountInput = amt"
+              :variant="amountInput === amt ? 'default' : 'outline'"
+              size="sm"
+            >
+              {{ formatBalance(amt) }}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <!-- Bet Cart -->
+      <Card v-if="betCart.length > 0">
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <CardTitle class="text-base">Selected Numbers ({{ betCart.length }})</CardTitle>
+            <Button variant="ghost" size="sm" @click="clearCart">Clear All</Button>
+          </div>
+        </CardHeader>
+        <CardContent class="space-y-3">
+          <div v-for="(item, index) in betCart" :key="index" class="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            <div class="flex-shrink-0 w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span class="text-2xl font-bold text-primary">{{ item.number }}</span>
             </div>
+            <div class="flex-1">
+              <Input
+                v-model.number="item.amount"
+                type="number"
+                placeholder="Amount"
+                min="100"
+                max="100000"
+                class="w-full h-10"
+              />
+              <p class="text-xs text-muted-foreground mt-1">
+                Max Win: {{ formatBalance(item.amount * 500) }} MMK
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" @click="removeFromCart(index)">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" @click="removeFromCart(index)">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </Button>
-        </div>
+        </CardContent>
+      </Card>
 
-        <!-- Summary -->
-        <div class="pt-3 border-t space-y-2">
-          <div class="flex justify-between text-sm">
-            <span class="text-muted-foreground">Total Amount</span>
-            <span class="font-semibold">{{ formatBalance(totalAmount) }} MMK</span>
+      <!-- Bet Summary -->
+      <Card>
+        <CardContent class="pt-6 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-muted-foreground">Total Bet</span>
+            <span class="text-xl font-bold">{{ formatBalance(totalAmount) }} MMK</span>
           </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-muted-foreground">Max Win (Exact)</span>
-            <span class="font-semibold text-green-600 dark:text-green-400">{{ formatBalance(maxWin) }} MMK</span>
+          <div class="flex justify-between items-center pt-3 border-t">
+            <span class="text-sm text-muted-foreground">Potential Win</span>
+            <span class="text-xl font-bold text-green-600 dark:text-green-400">{{ formatBalance(maxWin) }} MMK</span>
           </div>
-        </div>
-
-        <!-- Place Bet Button -->
-        <Button
-          @click="placeBet"
-          class="w-full"
-          size="lg"
-          :disabled="isPlacingBet || !canPlaceBet"
-        >
-          {{ isPlacingBet ? 'Placing Bet...' : 'Place Bet' }}
-        </Button>
-      </CardContent>
-    </Card>
-
-    <!-- Recent Results -->
-    <Card>
-      <CardHeader>
-        <div class="flex items-center justify-between">
-          <CardTitle>Recent Results</CardTitle>
-          <NuxtLink to="/results">
-            <Button variant="ghost" size="sm">View All</Button>
-          </NuxtLink>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <SkeletonLoader v-if="isLoadingResults" type="list-item" />
-        <div v-else-if="recentResults.length > 0" class="space-y-2">
-          <div
-            v-for="result in recentResults.slice(0, 5)"
-            :key="result.session_code"
-            class="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+          <Button
+            @click="placeBet"
+            class="w-full"
+            size="lg"
+            :disabled="isPlacingBet || !canPlaceBet"
           >
-            <div>
-              <p class="font-medium">{{ result.session_type }} - {{ formatDate(result.session_date) }}</p>
-              <p class="text-xs text-muted-foreground">{{ formatTime(result.result_time) }}</p>
-            </div>
-            <div class="text-3xl font-bold text-primary">{{ result.result_number }}</div>
-          </div>
-        </div>
-        <p v-else class="text-center text-muted-foreground py-4">No results yet</p>
-      </CardContent>
-    </Card>
+            {{ betText }}
+          </Button>
+        </CardContent>
+      </Card>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 definePageMeta({
   middleware: 'auth'
 })
 
-const { getCurrentSession, placeBet: placeBetApi, getRecentResults } = use3DBetting()
+const { getCurrentSession, placeBet: placeBetApi } = use3DBetting()
 const { connect, disconnect } = useWebSocket()
+const toast = useToast()
 
 const session = ref<any>(null)
-const balance = ref<any>(null)
-const recentResults = ref<any[]>([])
+const balance = ref(0)
 const betCart = ref<Array<{ number: string, amount: number }>>([])
 const numberInput = ref('')
 const amountInput = ref(1000)
-const countdown = ref('')
-const countdownInterval = ref<any>(null)
 
 const isLoadingSession = ref(false)
-const isLoadingBalance = ref(false)
-const isLoadingResults = ref(false)
 const isPlacingBet = ref(false)
 
 // Computed
@@ -258,67 +171,57 @@ const maxWin = computed(() => {
 const canPlaceBet = computed(() => {
   return betCart.value.length > 0 &&
     betCart.value.every(item => item.amount >= 100 && item.amount <= 100000) &&
-    totalAmount.value <= (balance.value?.available_balance || 0) &&
+    totalAmount.value <= balance.value &&
     session.value?.status === 'open'
+})
+
+const betText = computed(() => {
+  if (!session.value) return 'No Active Session'
+  if (!betCart.value.length) return 'Add Numbers First'
+  if (totalAmount.value > balance.value) return 'Insufficient Balance'
+  if (isPlacingBet.value) return 'Placing Bet...'
+  return `Place Bet - ${formatBalance(totalAmount.value)} MMK`
 })
 
 // Methods
 const loadSession = async () => {
   isLoadingSession.value = true
   try {
-    session.value = await getCurrentSession()
-    startCountdown()
+    const data = await getCurrentSession()
+    if (data) {
+      session.value = data
+    }
   } catch (error: any) {
     console.error('Failed to load session:', error)
+    toast.showToast(error.message || 'Failed to load session', 'error')
   } finally {
     isLoadingSession.value = false
   }
 }
 
 const loadBalance = async () => {
-  isLoadingBalance.value = true
-  try {
-    const api = useApi()
-    const response: any = await api.get('/api/betting/3d/balance')
-    balance.value = response.data
-  } catch (error) {
-    console.error('Failed to load balance:', error)
-  } finally {
-    isLoadingBalance.value = false
-  }
-}
-
-const loadRecentResults = async () => {
-  isLoadingResults.value = true
-  try {
-    recentResults.value = await getRecentResults(5)
-  } catch (error) {
-    console.error('Failed to load recent results:', error)
-  } finally {
-    isLoadingResults.value = false
+  const { user } = useAuth()
+  if (user.value?.wallet) {
+    balance.value = user.value.wallet.balance || 0
   }
 }
 
 const addNumber = () => {
-  // Validate number
   if (!/^\d{3}$/.test(numberInput.value)) {
-    alert('Please enter a valid 3-digit number (000-999)')
+    toast.showToast('Enter a valid 3-digit number', 'error')
     return
   }
 
-  // Check if already in cart
   if (betCart.value.some(item => item.number === numberInput.value)) {
-    alert('This number is already in your cart')
+    toast.showToast('Number already in cart', 'error')
     return
   }
 
-  // Add to cart
   betCart.value.push({
     number: numberInput.value,
     amount: amountInput.value || 1000
   })
 
-  // Clear input
   numberInput.value = ''
 }
 
@@ -331,7 +234,7 @@ const clearCart = () => {
 }
 
 const placeBet = async () => {
-  if (!canPlaceBet.value) return
+  if (!canPlaceBet.value || isPlacingBet.value) return
 
   isPlacingBet.value = true
   try {
@@ -342,94 +245,94 @@ const placeBet = async () => {
 
     const response = await placeBetApi(items)
     
-    alert(`Bet placed successfully! Slip Number: ${response.data.slip_number}`)
-    
-    clearCart()
-    await loadBalance()
+    if (response.success) {
+      toast.showToast('Bet placed successfully!', 'success')
+      
+      // Update balance
+      balance.value -= totalAmount.value
+      
+      // Clear cart
+      clearCart()
+      
+      // Reload session
+      await loadSession()
+    } else {
+      toast.showToast(response.message || 'Failed to place bet', 'error')
+    }
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to place bet. Please try again.')
+    toast.showToast(error.data?.message || error.message || 'Failed to place bet', 'error')
   } finally {
     isPlacingBet.value = false
   }
-}
-
-const startCountdown = () => {
-  if (countdownInterval.value) {
-    clearInterval(countdownInterval.value)
-  }
-
-  const updateCountdown = () => {
-    if (!session.value?.close_time) return
-
-    const now = new Date().getTime()
-    const closeTime = new Date(session.value.close_time).getTime()
-    const distance = closeTime - now
-
-    if (distance < 0) {
-      countdown.value = 'CLOSED'
-      clearInterval(countdownInterval.value)
-      return
-    }
-
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
-
-    if (days > 0) {
-      countdown.value = `${days}d ${hours}h ${minutes}m`
-    } else {
-      countdown.value = `${hours}h ${minutes}m`
-    }
-  }
-
-  updateCountdown()
-  countdownInterval.value = setInterval(updateCountdown, 60000) // Update every minute
 }
 
 const formatBalance = (amount: number) => {
   return new Intl.NumberFormat('en-US').format(amount || 0)
 }
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+const handleBetCreated = (event: any) => {
+  const { user } = useAuth()
+  const bet = event.detail
+  if (bet.user_id === user.value?.id) {
+    toast.showToast('Your bet has been received', 'info')
+  }
 }
 
-const formatTime = (time: string) => {
-  return new Date(time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+const handleBetUpdated = (event: any) => {
+  const { user } = useAuth()
+  const bet = event.detail
+  if (bet.user_id === user.value?.id) {
+    if (bet.status === 'accepted') {
+      toast.showToast('Your bet has been accepted', 'success')
+    } else if (bet.status === 'rejected') {
+      toast.showToast('Your bet has been rejected', 'error')
+      // Refund balance
+      balance.value += bet.total_amount
+    }
+  }
+}
+
+const handleBalanceUpdated = (event: any) => {
+  const { user } = useAuth()
+  const data = event.detail
+  if (data.user_id === user.value?.id) {
+    balance.value = data.balance
+  }
+}
+
+const handleSessionResulted = (event: any) => {
+  const data = event.detail
+  toast.showToast(`Result declared: ${data.result_number}`, 'info')
+  // Reload session
+  loadSession()
 }
 
 // Lifecycle
 onMounted(async () => {
-  connect()
-  await Promise.all([
-    loadSession(),
-    loadBalance(),
-    loadRecentResults()
-  ])
-
-  window.addEventListener('bet-updated', () => {
-    loadBalance()
-  })
-
-  window.addEventListener('session-resulted', () => {
-    loadSession()
-    loadRecentResults()
-  })
-
-  window.addEventListener('balance-updated', () => {
-    loadBalance()
-  })
+  const { user } = useAuth()
+  await loadSession()
+  await loadBalance()
+  
+  // Connect WebSocket
+  if (user.value) {
+    connect()
+  }
+  
+  // Listen to WebSocket events
+  window.addEventListener('bet-created', handleBetCreated)
+  window.addEventListener('bet-updated', handleBetUpdated)
+  window.addEventListener('balance-updated', handleBalanceUpdated)
+  window.addEventListener('session-resulted', handleSessionResulted)
 })
 
 onUnmounted(() => {
   disconnect()
-  if (countdownInterval.value) {
-    clearInterval(countdownInterval.value)
-  }
   
-  window.removeEventListener('bet-updated', () => {})
-  window.removeEventListener('session-resulted', () => {})
-  window.removeEventListener('balance-updated', () => {})
+  // Remove event listeners
+  window.removeEventListener('bet-created', handleBetCreated)
+  window.removeEventListener('bet-updated', handleBetUpdated)
+  window.removeEventListener('balance-updated', handleBalanceUpdated)
+  window.removeEventListener('session-resulted', handleSessionResulted)
 })
 
 useHead({

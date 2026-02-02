@@ -60,7 +60,7 @@
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium">Reverse Numbers</span>
               <Button @click="addReverse" size="sm" variant="outline">
-                Add All ({{ reverseNums.length }})
+                +R ({{ reverseNums.length }})
               </Button>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -190,17 +190,28 @@ const isLoading = computed(() => isBettingLoading.value)
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 
 const toggle = (n) => { 
-  if (isNumberBlocked(n)) return
+  if (isNumberBlocked(n)) {
+    const numStr = n.toString().padStart(2, '0')
+    toast.warning(`Number ${numStr} is blocked and cannot be selected`)
+    return
+  }
   const i = selected.value.indexOf(n)
   i > -1 ? selected.value.splice(i, 1) : selected.value.push(n)
 }
 
 const addReverse = () => {
+  const blockedReverse = []
   reverseNums.value.forEach(n => { 
-    if (!selected.value.includes(n) && !isNumberBlocked(n)) {
+    if (isNumberBlocked(n)) {
+      blockedReverse.push(n.toString().padStart(2, '0'))
+    } else if (!selected.value.includes(n)) {
       selected.value.push(n)
     }
   })
+  
+  if (blockedReverse.length > 0) {
+    toast.warning(`Blocked numbers skipped: ${blockedReverse.join(', ')}`)
+  }
 }
 
 const isNumberBlocked = (n) => {
