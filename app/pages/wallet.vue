@@ -86,7 +86,7 @@
         <CardTitle>Recent Transactions</CardTitle>
       </CardHeader>
       <CardContent>
-        <SkeletonLoader v-if="isLoadingTransactions" type="list-item" />
+        <SkeletonLoader v-if="isLoadingTransactions && transactions.length === 0" type="list-item" />
         <div v-else-if="transactions.length > 0" class="space-y-2">
           <div v-for="tx in transactions" :key="tx.id" class="flex items-center justify-between p-3 rounded-lg bg-muted/50">
             <div>
@@ -100,6 +100,19 @@
               <p class="text-xs text-muted-foreground">{{ formatBalance(tx.balance_after) }}</p>
             </div>
           </div>
+          
+          <!-- Loading more indicator -->
+          <div v-if="isLoadingMore" class="text-center py-4">
+            <SkeletonLoader type="list-item" />
+          </div>
+          
+          <!-- Load more trigger -->
+          <div ref="loadMoreTrigger" class="h-4"></div>
+          
+          <!-- End of list message -->
+          <p v-if="!hasMoreTransactions && transactions.length > 0" class="text-center text-muted-foreground text-sm py-4">
+            No more transactions
+          </p>
         </div>
         <p v-else class="text-center text-muted-foreground py-4">No transactions yet</p>
       </CardContent>
@@ -233,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -260,7 +273,15 @@ const note = ref('')
 
 const isLoadingRequests = ref(false)
 const isLoadingTransactions = ref(false)
+const isLoadingMore = ref(false)
 const isSubmitting = ref(false)
+
+// Pagination state
+const currentPage = ref(1)
+const perPage = 10
+const hasMoreTransactions = ref(true)
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 const loadBalance = async () => {
   try {
@@ -292,17 +313,69 @@ const loadPaymentRequests = async () => {
   }
 }
 
-const loadTransactions = async () => {
-  isLoadingTransactions.value = true
+const loadTransactions = async (page: number = 1) => {
+  if (page === 1) {
+    isLoadingTransactions.value = true
+  } else {
+    isLoadingMore.value = true
+  }
+  
   try {
-    const response: any = await api.get('/api/wallet/transactions?limit=10')
-    transactions.value = response.data || []
+    const response: any = await api.get(`/api/wallet/transactions?page=${page}&per_page=${perPage}`)
+    
+    if (response.success && response.data) {
+      const newTransactions = response.data || []
+      
+      if (page === 1) {
+        transactions.value = newTransactions
+      } else {
+        transactions.value = [...transactions.value, ...newTransactions]
+      }
+      
+      // Check if there are more transactions using meta information
+      if (response.meta) {
+        hasMoreTransactions.value = response.meta.current_page < response.meta.last_page
+      } else {
+        hasMoreTransactions.value = newTransactions.length === perPage
+      }
+    }
+    
   } catch (error) {
     console.error('Failed to load transactions:', error)
-    transactions.value = []
+    if (page === 1) {
+      transactions.value = []
+    }
   } finally {
     isLoadingTransactions.value = false
+    isLoadingMore.value = false
   }
+}
+
+const loadMoreTransactions = async () => {
+  if (isLoadingMore.value || !hasMoreTransactions.value) return
+  
+  currentPage.value++
+  await loadTransactions(currentPage.value)
+}
+
+const setupIntersectionObserver = () => {
+  if (!loadMoreTrigger.value) return
+  
+  observer = new IntersectionObserver(
+    (entries) => {
+      const [entry] = entries
+      if (entry.isIntersecting && hasMoreTransactions.value && !isLoadingMore.value) {
+        loadMoreTransactions()
+      }
+    },
+    {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    }
+  )
+  
+  observer.observe(loadMoreTrigger.value)
 }
 
 const submitDeposit = async () => {
@@ -404,8 +477,19 @@ onMounted(async () => {
     loadBalance(),
     loadPaymentMethods(),
     loadPaymentRequests(),
-    loadTransactions()
+    loadTransactions(1)
   ])
+  
+  // Setup intersection observer after initial load
+  nextTick(() => {
+    setupIntersectionObserver()
+  })
+})
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+  }
 })
 
 useHead({

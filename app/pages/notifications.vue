@@ -56,7 +56,7 @@
           :key="notification.id"
           :class="[
             'p-4 rounded-lg border transition-colors cursor-pointer',
-            !notification.read_at ? 'bg-primary/5 border-primary/20' : 'bg-card'
+            !notification.is_read && !notification.read_at ? 'bg-primary/5 border-primary/20' : 'bg-card'
           ]"
           @click="markAsRead(notification)"
         >
@@ -73,7 +73,7 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-2">
                 <h3 class="font-semibold text-sm">{{ notification.title }}</h3>
-                <div v-if="!notification.read_at" class="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1"></div>
+                <div v-if="!notification.is_read && !notification.read_at" class="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1"></div>
               </div>
               <p class="text-sm text-muted-foreground mt-1">{{ notification.message }}</p>
               <p class="text-xs text-muted-foreground mt-2">{{ formatDateTime(notification.created_at) }}</p>
@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
@@ -104,13 +104,14 @@ definePageMeta({
 })
 
 const api = useApi()
+const { fetchUnreadCount, decrementUnreadCount, resetUnreadCount } = useNotifications()
 
 const notifications = ref<any[]>([])
 const filterType = ref('')
 const isLoading = ref(false)
 
 const unreadCount = computed(() => {
-  return notifications.value.filter(n => !n.read_at).length
+  return notifications.value.filter(n => !n.is_read && !n.read_at).length
 })
 
 const filteredNotifications = computed(() => {
@@ -131,11 +132,13 @@ const loadNotifications = async () => {
 }
 
 const markAsRead = async (notification: any) => {
-  if (notification.read_at) return
+  if (notification.is_read || notification.read_at) return
 
   try {
     await api.post(`/api/notifications/${notification.id}/read`, {})
+    notification.is_read = true
     notification.read_at = new Date().toISOString()
+    decrementUnreadCount()
   } catch (error) {
     console.error('Failed to mark as read:', error)
   }
@@ -145,10 +148,12 @@ const markAllAsRead = async () => {
   try {
     await api.post('/api/notifications/read-all', {})
     notifications.value.forEach(n => {
-      if (!n.read_at) {
+      if (!n.is_read && !n.read_at) {
+        n.is_read = true
         n.read_at = new Date().toISOString()
       }
     })
+    resetUnreadCount()
   } catch (error) {
     console.error('Failed to mark all as read:', error)
   }
@@ -183,8 +188,22 @@ const formatDateTime = (date: string) => {
   })
 }
 
+// WebSocket listener for new notifications
+const handleNotificationCreated = (event: any) => {
+  const notification = event.detail
+  notifications.value.unshift(notification)
+}
+
 onMounted(() => {
   loadNotifications()
+  fetchUnreadCount()
+  
+  // Listen for real-time notifications
+  window.addEventListener('notification-created', handleNotificationCreated)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('notification-created', handleNotificationCreated)
 })
 
 useHead({

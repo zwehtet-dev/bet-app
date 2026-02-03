@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Bell, Sun, Moon } from 'lucide-vue-next'
 import {
   DropdownMenu,
@@ -10,9 +10,41 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const route = useRoute()
-const notificationCount = ref(3)
 const selectedLanguage = ref('en')
 const { theme, toggleTheme } = useTheme()
+const { unreadCount, fetchUnreadCount, setupWebSocketListeners } = useNotifications()
+const { isAuthenticated } = useAuth()
+const { connect, disconnect } = useWebSocket()
+
+let cleanupListeners: (() => void) | undefined
+
+// Fetch on mount and setup WebSocket
+onMounted(() => {
+  if (isAuthenticated.value) {
+    fetchUnreadCount()
+    connect()
+    cleanupListeners = setupWebSocketListeners()
+    
+    // Load user settings
+    const { loadSettings } = useToast()
+    loadSettings()
+  }
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  disconnect()
+  if (cleanupListeners) {
+    cleanupListeners()
+  }
+})
+
+// Fetch on every route change
+watch(() => route.path, () => {
+  if (isAuthenticated.value) {
+    fetchUnreadCount()
+  }
+})
 
 const pageConfig: Record<string, { title: string }> = {
   'index': { title: 'Welcome Back!' },
@@ -84,31 +116,11 @@ const selectLanguage = (code: string) => {
               <Moon v-else class="h-5 w-5" />
             </button>
 
-            <!-- Language Dropdown -->
-            <!-- <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-3 gap-1">
-                  <span class="text-lg">{{ currentLanguage?.flag }}</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" class="w-40">
-                <DropdownMenuItem 
-                  v-for="lang in languages" 
-                  :key="lang.code"
-                  @click="selectLanguage(lang.code)"
-                  :class="selectedLanguage === lang.code ? 'bg-accent' : ''"
-                >
-                  <span class="text-lg mr-2">{{ lang.flag }}</span>
-                  <span class="text-sm">{{ lang.name }}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> -->
-
             <!-- Notification Button -->
             <NuxtLink to="/notifications" class="relative inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10">
               <Bell class="h-5 w-5" />
-              <span v-if="notificationCount > 0" class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                {{ notificationCount }}
+              <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                {{ unreadCount > 99 ? '99+' : unreadCount }}
               </span>
             </NuxtLink>
           </div>
@@ -138,6 +150,9 @@ const selectLanguage = (code: string) => {
           </NuxtLink>
         </div>
       </nav>
+      
+      <!-- Toast Container -->
+      <ToastContainer />
     </div>
   </div>
 </template>
