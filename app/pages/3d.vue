@@ -221,13 +221,9 @@
         <!-- Summary & Place Bet -->
         <div class="mb-6">
           <div class="bg-card rounded-2xl p-4 border mb-4">
-            <div class="flex justify-between text-sm mb-2">
+            <div class="flex justify-between text-sm">
               <span class="text-muted-foreground">Total Bet:</span>
               <span class="font-black text-amber-500">{{ formatBalance(totalAmount) }} MMK</span>
-            </div>
-            <div class="flex justify-between text-sm">
-              <span class="text-muted-foreground">Potential Win:</span>
-              <span class="font-black text-green-600 dark:text-green-400">{{ formatBalance(maxWin) }} MMK</span>
             </div>
           </div>
           <button

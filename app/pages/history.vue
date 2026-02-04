@@ -149,16 +149,52 @@
           </div>
 
           <!-- Items -->
-          <div v-if="selectedBet.items">
-            <p class="text-sm text-muted-foreground mb-2">Bet Items</p>
+          <div v-if="selectedBet.items && selectedBet.items.length">
+            <p class="text-sm text-muted-foreground mb-2">
+              {{ activeTab === '2d' || activeTab === '3d' ? 'Bet Items' : 'Match Selections' }}
+            </p>
             <div class="space-y-2">
-              <div v-for="(item, index) in selectedBet.items" :key="index" class="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                <span class="font-semibold">{{ item.number || item.selection }}</span>
-                <div class="text-right">
-                  <p class="font-medium">{{ formatBalance(item.amount) }} MMK</p>
-                  <p v-if="item.is_winner" class="text-xs text-green-600 dark:text-green-400">Won: {{ formatBalance(item.actual_win) }} MMK</p>
+              <!-- 2D/3D Items -->
+              <template v-if="activeTab === '2d' || activeTab === '3d'">
+                <div v-for="(item, index) in selectedBet.items" :key="index" class="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                  <span class="font-semibold">{{ item.number }}</span>
+                  <div class="text-right">
+                    <p class="font-medium">{{ formatBalance(item.amount) }} MMK</p>
+                    <p v-if="item.is_winner" class="text-xs text-green-600 dark:text-green-400">Won: {{ formatBalance(item.actual_win) }} MMK</p>
+                  </div>
                 </div>
-              </div>
+              </template>
+
+              <!-- Football Items -->
+              <template v-else>
+                <div v-for="(item, index) in selectedBet.items" :key="index" class="p-3 rounded-lg bg-muted/50 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <p class="text-xs text-muted-foreground mb-1">{{ item.match?.league || 'League' }}</p>
+                      <p class="font-semibold text-sm">
+                        {{ item.match?.home_team || 'Home' }} vs {{ item.match?.away_team || 'Away' }}
+                      </p>
+                    </div>
+                    <div v-if="item.status" :class="[
+                      'px-2 py-0.5 rounded text-xs font-medium',
+                      item.status === 'won' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                      item.status === 'lost' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                      item.status === 'void' ? 'bg-gray-500/10 text-gray-600 dark:text-gray-400' :
+                      'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    ]">
+                      {{ item.status }}
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-muted-foreground">Selection: <span class="font-medium text-foreground">{{ item.selection?.toUpperCase() }}</span></span>
+                    <span class="text-muted-foreground">Odds: <span class="font-medium text-foreground">{{ item.odds }}</span></span>
+                  </div>
+                  <div v-if="item.match?.home_score !== null && item.match?.away_score !== null" class="flex items-center justify-between text-xs pt-2 border-t">
+                    <span class="text-muted-foreground">Score</span>
+                    <span class="font-bold">{{ item.match.home_score }} - {{ item.match.away_score }}</span>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -190,6 +226,7 @@ definePageMeta({
 
 const { getBetHistory: get2DBetHistory } = use2DBetting()
 const { getBetHistory: get3DBetHistory } = use3DBetting()
+const { getBetHistory: getFootballBetHistory } = useFootballBetting()
 
 const tabs = [
   { label: '2D', value: '2d' },
@@ -223,8 +260,11 @@ const loadBets = async (append = false) => {
       response = await get2DBetHistory(currentPage.value, perPage.value, '')
     } else if (activeTab.value === '3d') {
       response = await get3DBetHistory(currentPage.value, perPage.value, '')
+    } else if (activeTab.value === 'body') {
+      response = await getFootballBetHistory(currentPage.value, perPage.value, '', 'body')
+    } else if (activeTab.value === 'maung') {
+      response = await getFootballBetHistory(currentPage.value, perPage.value, '', 'maung')
     } else {
-      // Football bets - will implement later
       response = { data: [], meta: { last_page: 1, current_page: 1 } }
     }
 

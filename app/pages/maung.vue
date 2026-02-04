@@ -1,25 +1,10 @@
 <template>
   <div class="container mx-auto p-4 space-y-6 pb-32">
     <!-- Header -->
-    <div>
+    <!-- <div>
       <h1 class="text-2xl font-bold">Maung Betting</h1>
       <p class="text-muted-foreground">Parlay betting (minimum 3 matches)</p>
-    </div>
-
-    <!-- Agent Selection -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Select Agent</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <select v-model="selectedAgent" class="w-full p-2 rounded-lg border bg-background">
-          <option value="">Choose an agent</option>
-          <option v-for="agent in agents" :key="agent.id" :value="agent.id">
-            {{ agent.name }} ({{ agent.code }}) - Commission: {{ agent.commission_rate }}%
-          </option>
-        </select>
-      </CardContent>
-    </Card>
+    </div> -->
 
     <!-- Selected Matches Summary -->
     <Card v-if="selectedMatches.length > 0" class="border-primary">
@@ -104,7 +89,7 @@
     </div>
 
     <!-- Bet Slip (Fixed Bottom) -->
-    <div v-if="selectedMatches.length >= 3" class="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg">
+    <div v-if="selectedMatches.length >= 3" class="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg pb-14">
       <Card>
         <CardContent class="pt-6 space-y-4">
           <div>
@@ -124,17 +109,11 @@
             />
           </div>
 
-          <div v-if="betAmount >= 1000" class="p-3 rounded-lg bg-primary/10">
-            <p class="text-sm text-muted-foreground">Potential Win</p>
-            <p class="text-2xl font-bold text-primary">{{ formatCurrency(calculatePotentialWin()) }} MMK</p>
-            <p class="text-xs text-muted-foreground mt-1">Combined odds multiplier: {{ calculateOddsMultiplier() }}x</p>
-          </div>
-
           <div class="flex gap-2">
             <Button
               @click="placeBet"
               class="flex-1"
-              :disabled="isPlacingBet || !selectedAgent || !betAmount || selectedMatches.length < 3"
+              :disabled="isPlacingBet || !betAmount || selectedMatches.length < 3"
             >
               {{ isPlacingBet ? 'Placing...' : 'Place Parlay Bet' }}
             </Button>
@@ -159,11 +138,10 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { getMatches, getAgents, placeMaungBet } = useFootballBetting()
+const { getMatches, placeMaungBet } = useFootballBetting()
+const toast = useToast()
 
 const matches = ref<any[]>([])
-const agents = ref<any[]>([])
-const selectedAgent = ref('')
 const selectedMatches = ref<any[]>([])
 const betAmount = ref(10000)
 const isLoadingMatches = ref(false)
@@ -175,16 +153,9 @@ const loadMatches = async () => {
     matches.value = await getMatches('upcoming')
   } catch (error) {
     console.error('Failed to load matches:', error)
+    toast.error('Failed to load matches')
   } finally {
     isLoadingMatches.value = false
-  }
-}
-
-const loadAgents = async () => {
-  try {
-    agents.value = await getAgents()
-  } catch (error) {
-    console.error('Failed to load agents:', error)
   }
 }
 
@@ -222,20 +193,8 @@ const clearAllSelections = () => {
   selectedMatches.value = []
 }
 
-const calculateOddsMultiplier = () => {
-  // For simplicity, assuming each win is 2x (100% win)
-  // In reality, this would need to parse the odds from each market
-  return Math.pow(2, selectedMatches.value.length).toFixed(2)
-}
-
-const calculatePotentialWin = () => {
-  if (!betAmount.value || betAmount.value < 1000) return 0
-  // Simplified calculation: each match doubles the stake
-  return betAmount.value * Math.pow(2, selectedMatches.value.length)
-}
-
 const placeBet = async () => {
-  if (!selectedAgent.value || selectedMatches.value.length < 3 || !betAmount.value) return
+  if (selectedMatches.value.length < 3 || !betAmount.value) return
 
   isPlacingBet.value = true
   try {
@@ -244,18 +203,14 @@ const placeBet = async () => {
       selection: s.selection
     }))
 
-    const response = await placeMaungBet(
-      Number(selectedAgent.value),
-      items,
-      betAmount.value
-    )
+    const response = await placeMaungBet(items, betAmount.value)
 
-    alert(`Parlay bet placed successfully! Slip Number: ${response.data.slip_number}`)
+    toast.success(`Parlay bet placed! Slip: ${response.data.slip_number}`)
     
     clearAllSelections()
     betAmount.value = 10000
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to place bet. Please try again.')
+    toast.error(error.data?.message || 'Failed to place bet')
   } finally {
     isPlacingBet.value = false
   }
@@ -270,12 +225,8 @@ const formatDateTime = (date: string) => {
   })
 }
 
-const formatCurrency = (amount: number) => {
-  return amount.toLocaleString('en-US', { maximumFractionDigits: 0 })
-}
-
-onMounted(async () => {
-  await Promise.all([loadMatches(), loadAgents()])
+onMounted(() => {
+  loadMatches()
 })
 
 useHead({

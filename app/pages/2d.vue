@@ -197,10 +197,6 @@
             <span class="text-muted-foreground">Total Bet:</span>
             <span class="font-bold text-amber-500">{{ formatBalance(total) }} MMK</span>
           </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-muted-foreground">Potential Win:</span>
-            <span class="font-bold text-green-500">{{ formatBalance(total * multiplier) }} MMK</span>
-          </div>
           <Button @click="placeBetHandler" :disabled="!canBet || isPlacingBet" class="w-full" size="lg">
             {{ betText }}
           </Button>

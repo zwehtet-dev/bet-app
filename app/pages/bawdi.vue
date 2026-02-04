@@ -1,25 +1,10 @@
 <template>
   <div class="container mx-auto p-4 space-y-6">
     <!-- Header -->
-    <div>
+    <!-- <div>
       <h1 class="text-2xl font-bold">Body Betting</h1>
       <p class="text-muted-foreground">Single match football betting</p>
-    </div>
-
-    <!-- Agent Selection -->
-    <Card>
-      <CardHeader>
-        <CardTitle>Select Agent</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <select v-model="selectedAgent" class="w-full p-2 rounded-lg border bg-background">
-          <option value="">Choose an agent</option>
-          <option v-for="agent in agents" :key="agent.id" :value="agent.id">
-            {{ agent.name }} ({{ agent.code }}) - Commission: {{ agent.commission_rate }}%
-          </option>
-        </select>
-      </CardContent>
-    </Card>
+    </div> -->
 
     <!-- Matches List -->
     <div class="space-y-3">
@@ -77,7 +62,7 @@
     </div>
 
     <!-- Bet Slip -->
-    <div v-if="selectedBet" class="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg">
+    <div v-if="selectedBet" class="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg pb-14">
       <Card>
         <CardContent class="pt-6 space-y-4">
           <div>
@@ -101,7 +86,7 @@
             <Button
               @click="placeBet"
               class="flex-1"
-              :disabled="isPlacingBet || !selectedAgent || !betAmount"
+              :disabled="isPlacingBet || !betAmount"
             >
               {{ isPlacingBet ? 'Placing...' : 'Place Bet' }}
             </Button>
@@ -126,11 +111,10 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { getMatches, getAgents, placeBodyBet } = useFootballBetting()
+const { getMatches, placeBodyBet } = useFootballBetting()
+const toast = useToast()
 
 const matches = ref<any[]>([])
-const agents = ref<any[]>([])
-const selectedAgent = ref('')
 const selectedBet = ref<any>(null)
 const betAmount = ref(10000)
 const isLoadingMatches = ref(false)
@@ -142,16 +126,9 @@ const loadMatches = async () => {
     matches.value = await getMatches('upcoming')
   } catch (error) {
     console.error('Failed to load matches:', error)
+    toast.error('Failed to load matches')
   } finally {
     isLoadingMatches.value = false
-  }
-}
-
-const loadAgents = async () => {
-  try {
-    agents.value = await getAgents()
-  } catch (error) {
-    console.error('Failed to load agents:', error)
   }
 }
 
@@ -170,24 +147,22 @@ const clearSelection = () => {
 }
 
 const placeBet = async () => {
-  if (!selectedAgent.value || !selectedBet.value || !betAmount.value) return
+  if (!selectedBet.value || !betAmount.value) return
 
   isPlacingBet.value = true
   try {
     const response = await placeBodyBet(
-      Number(selectedAgent.value),
-      selectedBet.value.match.id,
       selectedBet.value.market.id,
       selectedBet.value.selection,
       betAmount.value
     )
 
-    alert(`Bet placed successfully! Slip Number: ${response.data.slip_number}`)
+    toast.success(`Bet placed successfully! Slip: ${response.data.slip_number}`)
     
     clearSelection()
     betAmount.value = 10000
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to place bet. Please try again.')
+    toast.error(error.data?.message || 'Failed to place bet')
   } finally {
     isPlacingBet.value = false
   }
@@ -202,8 +177,8 @@ const formatDateTime = (date: string) => {
   })
 }
 
-onMounted(async () => {
-  await Promise.all([loadMatches(), loadAgents()])
+onMounted(() => {
+  loadMatches()
 })
 
 useHead({

@@ -15,9 +15,14 @@
               <p class="text-sm text-muted-foreground">{{ unreadCount }} unread</p>
             </div>
           </div>
-          <Button v-if="unreadCount > 0" @click="markAllAsRead" variant="ghost" size="sm">
-            Mark All Read
-          </Button>
+          <div class="flex gap-2">
+            <Button v-if="notifications.length > 0" @click="deleteAllNotifications" variant="ghost" size="sm">
+              Delete All
+            </Button>
+            <Button v-if="unreadCount > 0" @click="markAllAsRead" variant="ghost" size="sm">
+              Mark All Read
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -55,10 +60,9 @@
           v-for="notification in filteredNotifications"
           :key="notification.id"
           :class="[
-            'p-4 rounded-lg border transition-colors cursor-pointer',
+            'p-4 rounded-lg border transition-colors',
             !notification.is_read && !notification.read_at ? 'bg-primary/5 border-primary/20' : 'bg-card'
           ]"
-          @click="markAsRead(notification)"
         >
           <div class="flex items-start gap-3">
             <div :class="['flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center', getNotificationColor(notification.type)]">
@@ -70,7 +74,7 @@
               </svg>
             </div>
 
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0" @click="markAsRead(notification)">
               <div class="flex items-start justify-between gap-2">
                 <h3 class="font-semibold text-sm">{{ notification.title }}</h3>
                 <div v-if="!notification.is_read && !notification.read_at" class="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1"></div>
@@ -78,6 +82,17 @@
               <p class="text-sm text-muted-foreground mt-1">{{ notification.message }}</p>
               <p class="text-xs text-muted-foreground mt-2">{{ formatDateTime(notification.created_at) }}</p>
             </div>
+
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              class="flex-shrink-0 h-8 w-8"
+              @click.stop="deleteNotification(notification.id)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </Button>
           </div>
         </div>
       </div>
@@ -156,6 +171,34 @@ const markAllAsRead = async () => {
     resetUnreadCount()
   } catch (error) {
     console.error('Failed to mark all as read:', error)
+  }
+}
+
+const deleteNotification = async (id: number) => {
+  try {
+    await api.del(`/api/notifications/${id}`)
+    const index = notifications.value.findIndex(n => n.id === id)
+    if (index !== -1) {
+      const notification = notifications.value[index]
+      if (!notification.is_read && !notification.read_at) {
+        decrementUnreadCount()
+      }
+      notifications.value.splice(index, 1)
+    }
+  } catch (error) {
+    console.error('Failed to delete notification:', error)
+  }
+}
+
+const deleteAllNotifications = async () => {
+  if (!confirm('Are you sure you want to delete all notifications?')) return
+  
+  try {
+    await api.del('/api/notifications')
+    notifications.value = []
+    resetUnreadCount()
+  } catch (error) {
+    console.error('Failed to delete all notifications:', error)
   }
 }
 
