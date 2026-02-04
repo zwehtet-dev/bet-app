@@ -363,7 +363,8 @@ const setupIntersectionObserver = () => {
   
   observer = new IntersectionObserver(
     (entries) => {
-      const [entry] = entries
+      if (entries.length === 0) return
+      const entry = entries[0]
       if (entry.isIntersecting && hasMoreTransactions.value && !isLoadingMore.value) {
         loadMoreTransactions()
       }
@@ -388,7 +389,7 @@ const submitDeposit = async () => {
       amount: depositAmount.value,
       payment_method_id: selectedPaymentMethod.value,
       transaction_id: transactionId.value,
-      note: note.value
+      notes: note.value
     })
 
     alert('Deposit request submitted successfully!')
@@ -418,10 +419,10 @@ const submitWithdraw = async () => {
   isSubmitting.value = true
   try {
     await api.post('/api/payment-requests', {
-      type: 'withdraw',
+      type: 'withdrawal',
       amount: withdrawAmount.value,
       payment_method_id: selectedPaymentMethod.value,
-      note: note.value
+      notes: note.value
     })
 
     alert('Withdrawal request submitted successfully!')

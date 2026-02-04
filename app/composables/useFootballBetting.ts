@@ -12,16 +12,10 @@ export const useFootballBetting = () => {
     return response.data
   }
 
-  const getAgents = async () => {
-    const response: any = await api.get('/api/betting/football/agents')
-    return response.data
-  }
-
-  const placeBodyBet = async (agentId: number, matchId: number, marketId: number, selection: string, amount: number) => {
+  const placeBodyBet = async (marketId: number, selection: string, amount: number) => {
     isLoading.value = true
     try {
       const response: any = await api.post('/api/betting/football/place-bet', {
-        agent_id: agentId,
         bet_type: 'body',
         total_stake: amount,
         items: [{
@@ -35,11 +29,10 @@ export const useFootballBetting = () => {
     }
   }
 
-  const placeMaungBet = async (agentId: number, items: Array<any>, amount: number) => {
+  const placeMaungBet = async (items: Array<any>, amount: number) => {
     isLoading.value = true
     try {
       const response: any = await api.post('/api/betting/football/place-bet', {
-        agent_id: agentId,
         bet_type: 'maung',
         total_stake: amount,
         items
@@ -80,7 +73,6 @@ export const useFootballBetting = () => {
     isLoading,
     getMatches,
     getMatchDetails,
-    getAgents,
     placeBodyBet,
     placeMaungBet,
     getBetHistory,
