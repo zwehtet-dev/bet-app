@@ -222,7 +222,7 @@ definePageMeta({
 const { getCurrentSession, placeBet, isLoading: isBettingLoading } = use2DBetting()
 const { user } = useAuth()
 const { connect, disconnect } = useWebSocket()
-const { showToast } = useToast()
+const toast = useToast()
 
 const selected = ref([])
 const amount = ref(1000)
@@ -341,7 +341,7 @@ const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 const toggle = (n) => { 
   if (isNumberBlocked(n)) {
     const numStr = n.toString().padStart(2, '0')
-    showToast(`Number ${numStr} is blocked`, 'warning')
+    toast.warning(`Number ${numStr} is blocked`)
     return
   }
   const i = selected.value.indexOf(n)
@@ -366,7 +366,7 @@ const addReverse = () => {
   }
   
   if (blockedReverse.length > 0) {
-    showToast(`Blocked numbers skipped: ${blockedReverse.join(', ')}`, 'warning')
+    toast.warning(`Blocked numbers skipped: ${blockedReverse.join(', ')}`)
   }
 }
 
@@ -388,7 +388,7 @@ const applyPattern = (p) => {
   }
   
   if (blockedNums.length > 0) {
-    showToast(`${blockedNums.length} blocked numbers skipped`, 'warning')
+    toast.warning(`${blockedNums.length} blocked numbers skipped`)
   }
 }
 
@@ -406,7 +406,7 @@ const loadSession = async () => {
     }
   } catch (error) {
     console.error('Failed to load session:', error)
-    showToast(error.message || 'Failed to load session', 'error')
+    toast.error(error.message || 'Failed to load session')
   }
 }
 
@@ -424,7 +424,7 @@ const placeBetHandler = async () => {
     const response = await placeBet(items)
     
     if (response.success) {
-      showToast('Bet placed successfully!', 'success')
+      toast.success('Bet placed successfully!')
       
       // Clear selections
       selected.value = []
@@ -437,12 +437,12 @@ const placeBetHandler = async () => {
       // Reload session to get updated blocked numbers
       await loadSession()
     } else {
-      showToast(response.message || 'Failed to place bet', 'error')
+      toast.error(response.message || 'Failed to place bet')
     }
   } catch (error) {
     console.error('Failed to place bet:', error)
     const message = error?.response?.data?.message || error?.message || 'Failed to place bet'
-    showToast(message, 'error')
+    toast.error(message)
   } finally {
     isPlacingBet.value = false
   }
@@ -451,9 +451,9 @@ const placeBetHandler = async () => {
 const handleBetUpdated = (event) => {
   const bet = event.detail
   if (bet.status === 'accepted') {
-    showToast('Your bet has been accepted', 'success')
+    toast.success('Your bet has been accepted')
   } else if (bet.status === 'rejected') {
-    showToast('Your bet has been rejected', 'error')
+    toast.error('Your bet has been rejected')
     const { fetchUser } = useAuth()
     fetchUser()
   }
@@ -466,7 +466,7 @@ const handleBalanceUpdated = () => {
 
 const handleSessionResulted = (event) => {
   const data = event.detail
-  showToast(`Result declared: ${data.result_number}`, 'info')
+  toast.info(`Result declared: ${data.result_number}`)
   loadSession()
 }
 
