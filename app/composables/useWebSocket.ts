@@ -38,7 +38,13 @@ export const useWebSocket = () => {
         if (usr?.id) {
           subscribeToChannel(`user.${usr.id}`)
         }
+
+        // Subscribe to betting channels for live updates
+        subscribeToChannel('bets.2d')
+        subscribeToChannel('bets.3d')
+        subscribeToChannel('bets.football')
       }
+
 
       socket.value.onclose = (event) => {
         isConnected.value = false
