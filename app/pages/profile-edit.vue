@@ -151,8 +151,9 @@ const handleSave = async () => {
       showToast('Profile updated successfully', 'success')
       setTimeout(() => navigateTo('/profile'), 1000)
     }
-  } catch (error) {
-    showToast(error.data?.message || 'Failed to update profile', 'error')
+  } catch (error: any) {
+    const message = error?.response?.data?.message || error?.message || 'Failed to update profile'
+    showToast(message, 'error')
   } finally {
     isLoading.value = false
   }

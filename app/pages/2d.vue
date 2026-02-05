@@ -439,9 +439,10 @@ const placeBetHandler = async () => {
     } else {
       showToast(response.message || 'Failed to place bet', 'error')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to place bet:', error)
-    showToast(error.data?.message || error.message || 'Failed to place bet', 'error')
+    const message = error?.response?.data?.message || error?.message || 'Failed to place bet'
+    showToast(message, 'error')
   } finally {
     isPlacingBet.value = false
   }

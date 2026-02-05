@@ -168,12 +168,12 @@ const handleSignup = async () => {
       errorMessage.value = response.message || 'Registration failed. Please try again.'
     }
   } catch (error: any) {
-    if (error.data?.errors) {
+    if (error?.response?.data?.errors) {
       // Laravel validation errors
-      const errors = Object.values(error.data.errors).flat()
+      const errors = Object.values(error.response.data.errors).flat()
       errorMessage.value = errors[0] as string
     } else {
-      errorMessage.value = error.data?.message || 'An error occurred. Please try again.'
+      errorMessage.value = error?.response?.data?.message || error?.message || 'An error occurred. Please try again.'
     }
   } finally {
     isLoading.value = false

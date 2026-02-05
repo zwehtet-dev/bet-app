@@ -297,7 +297,8 @@ const placeBet = async () => {
     clearCart()
     await Promise.all([loadBalance(), loadDigitStatus()])
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to place bet. Please try again.')
+    const message = error?.response?.data?.message || error?.message || 'Failed to place bet. Please try again.'
+    alert(message)
   } finally {
     isPlacingBet.value = false
   }

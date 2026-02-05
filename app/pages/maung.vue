@@ -210,7 +210,9 @@ const placeBet = async () => {
     clearAllSelections()
     betAmount.value = 10000
   } catch (error: any) {
-    toast.error(error.data?.message || 'Failed to place bet')
+    console.error('Failed to place bet:', error)
+    const message = error?.response?.data?.message || error?.message || 'Failed to place bet'
+    toast.error(message)
   } finally {
     isPlacingBet.value = false
   }
