@@ -1,23 +1,33 @@
 export const useAuth = () => {
-  const user = useState('user', () => null)
+  const user = useState<any>('user', () => null)
   const token = useCookie('auth_token')
   const api = useApi()
 
   const login = async (identifier: string, password: string) => {
     try {
-      const response = await api.post('/api/auth/login', { identifier, password })
+      const response: any = await api.post('/api/auth/login', { identifier, password })
       
       if (response.success) {
-        // Ensure wallet balance is a number
+        // Handle wallet for users
         if (response.data.user.wallet) {
           response.data.user.wallet.balance = Number(response.data.user.wallet.balance)
           response.data.user.wallet.locked_balance = Number(response.data.user.wallet.locked_balance)
         }
         
+        // Handle agent data for agents
+        if (response.data.user.agent) {
+          response.data.user.agent.total_commission_earned = Number(response.data.user.agent.total_commission_earned)
+          response.data.user.agent.payable = Number(response.data.user.agent.payable)
+          response.data.user.agent.receivable = Number(response.data.user.agent.receivable)
+          response.data.user.agent.used_credit = Number(response.data.user.agent.used_credit)
+          response.data.user.agent.available_credit = Number(response.data.user.agent.available_credit)
+          response.data.user.agent.max_credit_limit = Number(response.data.user.agent.max_credit_limit)
+          response.data.user.agent.calculated_balance = Number(response.data.user.agent.calculated_balance)
+        }
+        
         user.value = response.data.user
         token.value = response.data.token
         
-        // Fetch notification count after successful login
         const { fetchUnreadCount } = useNotifications()
         await fetchUnreadCount()
         
@@ -39,7 +49,6 @@ export const useAuth = () => {
       user.value = null
       token.value = null
       
-      // Reset notification count on logout
       const { resetUnreadCount } = useNotifications()
       resetUnreadCount()
       
@@ -56,14 +65,25 @@ export const useAuth = () => {
     
     try {
       console.log('🔐 fetchUser: Fetching user with token')
-      const response = await api.get('/api/auth/user')
+      const response: any = await api.get('/api/auth/user')
       console.log('🔐 fetchUser: Response received', response)
       
       if (response.success) {
-        // Ensure wallet balance is a number
+        // Handle wallet for users
         if (response.data.wallet) {
           response.data.wallet.balance = Number(response.data.wallet.balance)
           response.data.wallet.locked_balance = Number(response.data.wallet.locked_balance)
+        }
+        
+        // Handle agent data for agents
+        if (response.data.agent) {
+          response.data.agent.total_commission_earned = Number(response.data.agent.total_commission_earned)
+          response.data.agent.payable = Number(response.data.agent.payable)
+          response.data.agent.receivable = Number(response.data.agent.receivable)
+          response.data.agent.used_credit = Number(response.data.agent.used_credit)
+          response.data.agent.available_credit = Number(response.data.agent.available_credit)
+          response.data.agent.max_credit_limit = Number(response.data.agent.max_credit_limit)
+          response.data.agent.calculated_balance = Number(response.data.agent.calculated_balance)
         }
         
         user.value = response.data

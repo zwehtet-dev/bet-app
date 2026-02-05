@@ -1,10 +1,64 @@
 <template>
   <div class="container mx-auto p-4 space-y-6">
-    <!-- Balance Card -->
+    <!-- Agent Balance Card (for agents only) -->
+    <Card v-if="isAgent">
+      <CardContent class="pt-6">
+        <div class="text-center space-y-2">
+          <p class="text-sm text-muted-foreground">Agent Balance</p>
+          <p :class="['text-4xl font-bold', agentData?.calculated_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
+            {{ agentData?.calculated_balance >= 0 ? '+' : '' }}{{ formatBalance(agentData?.calculated_balance || 0) }}
+          </p>
+          <p class="text-xs text-muted-foreground">Payable - Receivable</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Payable (You will receive)</p>
+            <p class="text-lg font-semibold text-green-600 dark:text-green-400">{{ formatBalance(agentData?.receivable || 0) }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Receivable (You must pay)</p>
+            <p class="text-lg font-semibold text-red-600 dark:text-red-400">{{ formatBalance(agentData?.payable || 0) }}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Commission</p>
+            <p class="text-sm font-semibold">{{ formatBalance(agentData?.total_commission_earned || 0) }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Used Credit</p>
+            <p class="text-sm font-semibold">{{ formatBalance(agentData?.used_credit || 0) }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Available Credit</p>
+            <p class="text-sm font-semibold">{{ formatBalance(agentData?.available_credit || 0) }}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">2D Rate</p>
+            <p class="text-sm font-semibold">{{ agentData?.commission_2d || 0 }}%</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">3D Rate</p>
+            <p class="text-sm font-semibold">{{ agentData?.commission_3d || 0 }}%</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-muted-foreground mb-1">Football Rate</p>
+            <p class="text-sm font-semibold">{{ agentData?.commission_football || 0 }}%</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <!-- Wallet Balance Card (for all users including agents) -->
     <Card>
       <CardContent class="pt-6">
         <div class="text-center space-y-2">
-          <p class="text-sm text-muted-foreground">Total Balance</p>
+          <p class="text-sm text-muted-foreground">{{ isAgent ? 'Personal Wallet Balance' : 'Total Balance' }}</p>
           <p class="text-4xl font-bold">{{ formatBalance(balance?.balance || 0) }}</p>
           <p class="text-xs text-muted-foreground">MMK</p>
         </div>
@@ -246,7 +300,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -257,6 +311,10 @@ definePageMeta({
 })
 
 const api = useApi()
+const { user } = useAuth()
+
+const isAgent = computed(() => user.value?.role === 'agent')
+const agentData = computed(() => user.value?.agent)
 
 const balance = ref<any>(null)
 const paymentRequests = ref<any[]>([])
@@ -276,7 +334,6 @@ const isLoadingTransactions = ref(false)
 const isLoadingMore = ref(false)
 const isSubmitting = ref(false)
 
-// Pagination state
 const currentPage = ref(1)
 const perPage = 10
 const hasMoreTransactions = ref(true)
@@ -332,7 +389,6 @@ const loadTransactions = async (page: number = 1) => {
         transactions.value = [...transactions.value, ...newTransactions]
       }
       
-      // Check if there are more transactions using meta information
       if (response.meta) {
         hasMoreTransactions.value = response.meta.current_page < response.meta.last_page
       } else {
@@ -365,7 +421,7 @@ const setupIntersectionObserver = () => {
     (entries) => {
       if (entries.length === 0) return
       const entry = entries[0]
-      if (entry.isIntersecting && hasMoreTransactions.value && !isLoadingMore.value) {
+      if (entry && entry.isIntersecting && hasMoreTransactions.value && !isLoadingMore.value) {
         loadMoreTransactions()
       }
     },
@@ -392,7 +448,9 @@ const submitDeposit = async () => {
       notes: note.value
     })
 
-    alert('Deposit request submitted successfully!')
+    const { showToast } = useToast()
+    showToast('Deposit request submitted successfully', 'success')
+    
     showDepositModal.value = false
     depositAmount.value = 0
     selectedPaymentMethod.value = ''
@@ -400,9 +458,10 @@ const submitDeposit = async () => {
     note.value = ''
     
     await loadPaymentRequests()
-  } catch (error) {
+  } catch (error: any) {
+    const { showToast } = useToast()
     const message = error?.response?.data?.message || error?.message || 'Failed to submit deposit request'
-    alert(message)
+    showToast(message, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -413,7 +472,8 @@ const submitWithdraw = async () => {
 
   const availableBalance = (balance.value?.balance || 0) - (balance.value?.locked_balance || 0)
   if (withdrawAmount.value > availableBalance) {
-    alert('Insufficient balance')
+    const { showToast } = useToast()
+    showToast('Insufficient balance', 'error')
     return
   }
 
@@ -426,16 +486,19 @@ const submitWithdraw = async () => {
       notes: note.value
     })
 
-    alert('Withdrawal request submitted successfully!')
+    const { showToast } = useToast()
+    showToast('Withdrawal request submitted successfully', 'success')
+    
     showWithdrawModal.value = false
     withdrawAmount.value = 0
     selectedPaymentMethod.value = ''
     note.value = ''
     
     await loadPaymentRequests()
-  } catch (error) {
+  } catch (error: any) {
+    const { showToast } = useToast()
     const message = error?.response?.data?.message || error?.message || 'Failed to submit withdrawal request'
-    alert(message)
+    showToast(message, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -457,7 +520,8 @@ const getTransactionLabel = (type: string) => {
     withdraw: 'Withdrawal',
     bet_placed: 'Bet Placed',
     bet_win: 'Bet Win',
-    bet_refund: 'Bet Refund'
+    bet_refund: 'Bet Refund',
+    commission: 'Commission Earned'
   }
   return labels[type] || type
 }
@@ -483,7 +547,6 @@ onMounted(async () => {
     loadTransactions(1)
   ])
   
-  // Setup intersection observer after initial load
   nextTick(() => {
     setupIntersectionObserver()
   })

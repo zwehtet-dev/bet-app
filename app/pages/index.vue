@@ -15,7 +15,7 @@
       <CardHeader>
         <div class="flex items-center justify-between">
           <div class="space-y-1">
-            <CardDescription>Available Balance</CardDescription>
+            <CardDescription>{{ user?.role === 'agent' ? 'Agent Balance' : 'Available Balance' }}</CardDescription>
             <CardTitle class="text-3xl font-bold">{{ formatBalance(balance) }} <span class="text-lg text-muted-foreground font-normal">MMK</span></CardTitle>
           </div>
           <div class="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -31,7 +31,7 @@
             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Add Funds
+            {{ user?.role === 'agent' ? 'View Details' : 'Add Funds' }}
           </Button>
         </NuxtLink>
       </CardContent>
@@ -111,7 +111,14 @@ const games = [
   }
 ]
 
-const balance = computed(() => user.value?.wallet?.balance || 0)
+const balance = computed(() => {
+  // For agents, show calculated balance (winnings + commission - credits)
+  if (user.value?.role === 'agent' && user.value?.agent) {
+    return user.value.agent.calculated_balance || 0
+  }
+  // For regular users, show wallet balance
+  return user.value?.wallet?.balance || 0
+})
 
 const formatBalance = (n) => new Intl.NumberFormat('en-US').format(n || 0)
 
