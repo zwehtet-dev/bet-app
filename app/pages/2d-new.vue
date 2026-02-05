@@ -296,7 +296,7 @@ const placeBet = async () => {
     // Clear cart and reload data
     clearCart()
     await Promise.all([loadBalance(), loadDigitStatus()])
-  } catch (error: any) {
+  } catch (error) {
     const message = error?.response?.data?.message || error?.message || 'Failed to place bet. Please try again.'
     alert(message)
   } finally {

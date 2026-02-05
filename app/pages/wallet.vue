@@ -400,7 +400,7 @@ const submitDeposit = async () => {
     note.value = ''
     
     await loadPaymentRequests()
-  } catch (error: any) {
+  } catch (error) {
     const message = error?.response?.data?.message || error?.message || 'Failed to submit deposit request'
     alert(message)
   } finally {
@@ -433,7 +433,7 @@ const submitWithdraw = async () => {
     note.value = ''
     
     await loadPaymentRequests()
-  } catch (error: any) {
+  } catch (error) {
     const message = error?.response?.data?.message || error?.message || 'Failed to submit withdrawal request'
     alert(message)
   } finally {

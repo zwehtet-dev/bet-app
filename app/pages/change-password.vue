@@ -126,7 +126,7 @@ const handleSubmit = async () => {
     setTimeout(() => {
       navigateTo('/profile')
     }, 2000)
-  } catch (error: any) {
+  } catch (error) {
     errorMessage.value = error?.response?.data?.message || error?.message || 'Failed to update password. Please try again.'
   } finally {
     isSubmitting.value = false
