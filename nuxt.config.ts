@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  compatibilityDate: '2024-11-01',
   devtools: { enabled: false },
   
   modules: [
@@ -37,6 +37,7 @@ export default defineNuxtConfig({
   
   vite: {
     build: {
+      target: 'es2020',
       cssCodeSplit: true,
       chunkSizeWarningLimit: 500,
       rollupOptions: {
@@ -48,7 +49,10 @@ export default defineNuxtConfig({
       }
     },
     optimizeDeps: {
-      include: ['vue', 'vue-router']
+      include: ['vue', 'vue-router'],
+      esbuildOptions: {
+        target: 'es2020'
+      }
     }
   },
   
