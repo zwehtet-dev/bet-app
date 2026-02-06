@@ -13,11 +13,11 @@
         
         <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
           <div class="text-center">
-            <p class="text-xs text-muted-foreground mb-1">Payable (You will receive)</p>
+            <p class="text-xs text-muted-foreground mb-1">Payable</p>
             <p class="text-lg font-semibold text-green-600 dark:text-green-400">{{ formatBalance(agentData?.receivable || 0) }}</p>
           </div>
           <div class="text-center">
-            <p class="text-xs text-muted-foreground mb-1">Receivable (You must pay)</p>
+            <p class="text-xs text-muted-foreground mb-1">Receivable</p>
             <p class="text-lg font-semibold text-red-600 dark:text-red-400">{{ formatBalance(agentData?.payable || 0) }}</p>
           </div>
         </div>
