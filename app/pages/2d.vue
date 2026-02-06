@@ -8,7 +8,7 @@
             <p class="text-xs text-muted-foreground">Session</p>
             <p class="font-semibold text-sm">{{ session.session_code }} - {{ session.session_type }}</p>
           </div>
-          <div class="text-right">
+          <div v-if="user?.role !== 'agent'" class="text-right">
             <p class="text-xs text-muted-foreground">Balance</p>
             <p class="font-bold text-lg">{{ formatBalance(userBalance) }} MMK</p>
           </div>
@@ -232,7 +232,14 @@ const isPlacingBet = ref(false)
 const multiplier = ref(85)
 const showPatterns = ref(false)
 
-const userBalance = computed(() => user.value?.wallet?.balance || 0)
+const userBalance = computed(() => {
+  // For agents, use payable + available credit
+  if (user.value?.role === 'agent' && user.value?.agent) {
+    return (user.value.agent.payable || 0) + (user.value.agent.available_credit || 0)
+  }
+  // For regular users, use wallet balance
+  return user.value?.wallet?.balance || 0
+})
 
 // Generate all numbers 00-99
 const allNumbers = Object.freeze(Array.from({ length: 100 }, (_, i) => i.toString().padStart(2, '0')))

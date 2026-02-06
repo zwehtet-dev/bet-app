@@ -10,12 +10,12 @@
       </div>
     </div>
 
-    <!-- Balance Card -->
-    <Card>
+    <!-- Balance Card (hidden for agents) -->
+    <Card v-if="user?.role !== 'agent'">
       <CardHeader>
         <div class="flex items-center justify-between">
           <div class="space-y-1">
-            <CardDescription>{{ user?.role === 'agent' ? 'Agent Balance' : 'Available Balance' }}</CardDescription>
+            <CardDescription>Available Balance</CardDescription>
             <CardTitle class="text-3xl font-bold">{{ formatBalance(balance) }} <span class="text-lg text-muted-foreground font-normal">MMK</span></CardTitle>
           </div>
           <div class="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -31,7 +31,7 @@
             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            {{ user?.role === 'agent' ? 'View Details' : 'Add Funds' }}
+            Add Funds
           </Button>
         </NuxtLink>
       </CardContent>
@@ -112,11 +112,21 @@ const games = [
 ]
 
 const balance = computed(() => {
-  // For agents, show calculated balance (winnings + commission - credits)
+  // For agents, show calculated balance (payable - receivable)
   if (user.value?.role === 'agent' && user.value?.agent) {
     return user.value.agent.calculated_balance || 0
   }
   // For regular users, show wallet balance
+  return user.value?.wallet?.balance || 0
+})
+
+// Available balance for betting (different from display balance for agents)
+const availableForBetting = computed(() => {
+  if (user.value?.role === 'agent' && user.value?.agent) {
+    // Agents can use: payable + available credit
+    return (user.value.agent.payable || 0) + (user.value.agent.available_credit || 0)
+  }
+  // Regular users use wallet balance
   return user.value?.wallet?.balance || 0
 })
 

@@ -2,11 +2,15 @@
   <div class="min-h-screen bg-background">
     <div class="container mx-auto px-4 py-4 max-w-md">
       
-      <!-- Balance Bar -->
+      <!-- Session Info Bar (no balance for agents) -->
       <div v-if="session" class="mb-4 flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5">
-        <div>
+        <div v-if="user?.role !== 'agent'">
           <p class="text-xs text-muted-foreground mb-1">Balance</p>
           <p class="text-2xl font-bold">{{ formatBalance(balance) }}</p>
+        </div>
+        <div v-else>
+          <p class="text-xs text-muted-foreground mb-1">3D Betting</p>
+          <p class="text-lg font-bold">{{ session.session_type }}</p>
         </div>
         <div class="text-right">
           <p class="text-xs text-muted-foreground mb-1">{{ session.session_code }}</p>
@@ -400,7 +404,11 @@ const loadSession = async () => {
 }
 
 const loadBalance = async () => {
-  if (user.value?.wallet) {
+  if (user.value?.role === 'agent' && user.value?.agent) {
+    // For agents, use payable + available credit
+    balance.value = (user.value.agent.payable || 0) + (user.value.agent.available_credit || 0)
+  } else if (user.value?.wallet) {
+    // For regular users, use wallet balance
     balance.value = user.value.wallet.balance || 0
   }
 }
