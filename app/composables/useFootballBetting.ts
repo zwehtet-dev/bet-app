@@ -2,8 +2,8 @@ export const useFootballBetting = () => {
   const api = useApi()
   const isLoading = ref(false)
 
-  const getMatches = async (status = 'upcoming') => {
-    const response: any = await api.get(`/api/betting/football/matches?status=${status}`)
+  const getMatches = async () => {
+    const response: any = await api.get('/api/betting/football/matches')
     return response.data
   }
 

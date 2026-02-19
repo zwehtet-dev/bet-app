@@ -440,7 +440,7 @@ const submitDeposit = async () => {
 
   isSubmitting.value = true
   try {
-    await api.post('/api/payment-requests', {
+    const response = await api.post('/api/payment-requests', {
       type: 'deposit',
       amount: depositAmount.value,
       payment_method_id: selectedPaymentMethod.value,
@@ -448,8 +448,17 @@ const submitDeposit = async () => {
       notes: note.value
     })
 
-    const { showToast } = useToast()
-    showToast('Deposit request submitted successfully', 'success')
+    const { success } = useToast()
+    const requestId = response.data?.payment_request_id || response.data?.id
+    const amount = depositAmount.value
+    
+    let message = `Amount: ${formatBalance(amount)} MMK`
+    if (requestId) {
+      message += ` | Request ID: ${requestId}`
+    }
+    message += ' | Status: Pending approval'
+    
+    success('Deposit request submitted successfully', message)
     
     showDepositModal.value = false
     depositAmount.value = 0
@@ -459,9 +468,9 @@ const submitDeposit = async () => {
     
     await loadPaymentRequests()
   } catch (error: any) {
-    const { showToast } = useToast()
+    const { error: showError } = useToast()
     const message = error?.response?.data?.message || error?.message || 'Failed to submit deposit request'
-    showToast(message, 'error')
+    showError(message)
   } finally {
     isSubmitting.value = false
   }
@@ -472,22 +481,31 @@ const submitWithdraw = async () => {
 
   const availableBalance = (balance.value?.balance || 0) - (balance.value?.locked_balance || 0)
   if (withdrawAmount.value > availableBalance) {
-    const { showToast } = useToast()
-    showToast('Insufficient balance', 'error')
+    const { error } = useToast()
+    error('Insufficient balance')
     return
   }
 
   isSubmitting.value = true
   try {
-    await api.post('/api/payment-requests', {
+    const response = await api.post('/api/payment-requests', {
       type: 'withdrawal',
       amount: withdrawAmount.value,
       payment_method_id: selectedPaymentMethod.value,
       notes: note.value
     })
 
-    const { showToast } = useToast()
-    showToast('Withdrawal request submitted successfully', 'success')
+    const { success } = useToast()
+    const requestId = response.data?.payment_request_id || response.data?.id
+    const amount = withdrawAmount.value
+    
+    let message = `Amount: ${formatBalance(amount)} MMK`
+    if (requestId) {
+      message += ` | Request ID: ${requestId}`
+    }
+    message += ' | Status: Pending approval'
+    
+    success('Withdrawal request submitted successfully', message)
     
     showWithdrawModal.value = false
     withdrawAmount.value = 0
@@ -496,9 +514,9 @@ const submitWithdraw = async () => {
     
     await loadPaymentRequests()
   } catch (error: any) {
-    const { showToast } = useToast()
+    const { error: showError } = useToast()
     const message = error?.response?.data?.message || error?.message || 'Failed to submit withdrawal request'
-    showToast(message, 'error')
+    showError(message)
   } finally {
     isSubmitting.value = false
   }

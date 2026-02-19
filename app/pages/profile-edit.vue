@@ -1,22 +1,6 @@
 <template>
   <div class="container mx-auto p-4 space-y-6">
     
-    <!-- Profile Picture -->
-    <!-- <div class="flex flex-col items-center gap-4">
-      <Avatar class="h-24 w-24">
-        <AvatarFallback class="bg-primary text-primary-foreground text-2xl font-bold">
-          {{ getInitials(form.name) }}
-        </AvatarFallback>
-      </Avatar>
-      <Button 
-        @click="showToast('Demo: Change profile picture feature')"
-        variant="outline" 
-        size="sm"
-      >
-        Change Photo
-      </Button>
-    </div> -->
-
     <!-- Edit Form -->
     
     <div class="pt-6 space-y-4">
@@ -68,20 +52,6 @@
     >
       {{ isLoading ? 'Saving...' : 'Save Changes' }}
     </Button>
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="slide">
-        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto">
-          <div :class="[
-            'p-4 rounded-lg text-center text-sm font-medium shadow-lg',
-            toast.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'
-          ]">
-            {{ toast.msg }}
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -98,6 +68,7 @@ definePageMeta({
 })
 
 const { user, fetchUser } = useAuth()
+const { success, error } = useToast()
 const api = useApi()
 
 const form = ref({
@@ -108,7 +79,6 @@ const form = ref({
 })
 
 const isLoading = ref(false)
-const toast = ref(null)
 
 const getInitials = (name) => {
   if (!name) return '?'
@@ -118,11 +88,6 @@ const getInitials = (name) => {
     .join('')
     .toUpperCase()
     .slice(0, 2)
-}
-
-const showToast = (msg, type = 'success') => {
-  toast.value = { msg, type }
-  setTimeout(() => toast.value = null, 3000)
 }
 
 const loadUserData = () => {
@@ -148,12 +113,12 @@ const handleSave = async () => {
     if (response.success) {
       // Refresh user data
       await fetchUser()
-      showToast('Profile updated successfully', 'success')
+      success('Profile updated successfully')
       setTimeout(() => navigateTo('/profile'), 1000)
     }
-  } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'Failed to update profile'
-    showToast(message, 'error')
+  } catch (err) {
+    const message = err?.response?.data?.message || err?.message || 'Failed to update profile'
+    error(message)
   } finally {
     isLoading.value = false
   }
@@ -167,16 +132,3 @@ useHead({
   title: 'Edit Profile - 2D3D'
 })
 </script>
-
-<style scoped>
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-enter-from,
-.slide-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-</style>

@@ -431,7 +431,23 @@ const placeBetHandler = async () => {
     const response = await placeBet(items)
     
     if (response.success) {
-      toast.success('Bet placed successfully!')
+      // Show success toast with bet slip details
+      const slipNumber = response.data?.slip_number || 'N/A'
+      const totalAmount = response.data?.total_amount || total.value
+      const potentialWin = response.data?.potential_win
+      const status = response.data?.status
+      
+      let message = `Slip: ${slipNumber} | Amount: ${formatBalance(totalAmount)} MMK`
+      if (potentialWin) {
+        message += ` | Potential Win: ${formatBalance(potentialWin)} MMK`
+      }
+      if (status === 'accepted') {
+        message += ' | Status: Accepted'
+      } else if (status === 'pending') {
+        message += ' | Status: Pending Approval'
+      }
+      
+      toast.success('Bet placed successfully!', message)
       
       // Clear selections
       selected.value = []

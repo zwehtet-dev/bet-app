@@ -434,8 +434,24 @@ const placeBetHandler = async () => {
     const response = await placeBetApi(items)
     
     if (response.success) {
-      success('Bet placed successfully!')
-      balance.value -= totalAmount.value
+      // Show success toast with bet slip details
+      const slipNumber = response.data?.slip_number || 'N/A'
+      const totalAmount = response.data?.total_amount || items.reduce((sum, item) => sum + item.amount, 0)
+      const potentialWin = response.data?.potential_win
+      const status = response.data?.status
+      
+      let message = `Slip: ${slipNumber} | Amount: ${formatBalance(totalAmount)} MMK`
+      if (potentialWin) {
+        message += ` | Potential Win: ${formatBalance(potentialWin)} MMK`
+      }
+      if (status === 'accepted') {
+        message += ' | Status: Accepted'
+      } else if (status === 'pending') {
+        message += ' | Status: Pending Approval'
+      }
+      
+      success('3D bet placed successfully!', message)
+      balance.value -= totalAmount
       digits.value = ['', '', '']
       selectedNumbers.value = []
       await loadSession()

@@ -150,7 +150,7 @@ const isPlacingBet = ref(false)
 const loadMatches = async () => {
   isLoadingMatches.value = true
   try {
-    matches.value = await getMatches('upcoming')
+    matches.value = await getMatches()
   } catch (error) {
     console.error('Failed to load matches:', error)
     toast.error('Failed to load matches')
@@ -205,13 +205,29 @@ const placeBet = async () => {
 
     const response = await placeMaungBet(items, betAmount.value)
 
-    toast.success(`Parlay bet placed! Slip: ${response.data.slip_number}`)
+    // Show success toast with bet slip details
+    const slipNumber = response.data?.slip_number || 'N/A'
+    const totalStake = response.data?.total_stake || betAmount.value
+    const potentialWin = response.data?.potential_win
+    const status = response.data?.status
+    
+    let message = `Slip: ${slipNumber} | Stake: ${formatCurrency(totalStake)} MMK`
+    if (potentialWin) {
+      message += ` | Potential Win: ${formatCurrency(potentialWin)} MMK`
+    }
+    if (status === 'accepted') {
+      message += ' | Status: Accepted'
+    } else if (status === 'pending') {
+      message += ' | Status: Pending Approval'
+    }
+    
+    toast.success('Parlay bet placed successfully!', message)
     
     clearAllSelections()
     betAmount.value = 10000
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to place bet:', error)
-    const message = error?.response?.data?.message || error?.message || 'Failed to place bet'
+    const message = error?.message || 'Failed to place bet'
     toast.error(message)
   } finally {
     isPlacingBet.value = false
@@ -225,6 +241,10 @@ const formatDateTime = (date: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US').format(amount)
 }
 
 onMounted(() => {

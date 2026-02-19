@@ -139,15 +139,18 @@ export const useWebSocket = () => {
       case 'bet.updated':
         window.dispatchEvent(new CustomEvent('bet-updated', { detail: payload }))
         if (payload.status === 'accepted') {
-          showToast('success', 'Your bet has been accepted')
+          const toast = useToast()
+          toast.success('Your bet has been accepted')
         } else if (payload.status === 'rejected') {
-          showToast('error', 'Your bet has been rejected')
+          const toast = useToast()
+          toast.error('Your bet has been rejected')
         }
         break
       
       case 'session.resulted':
         window.dispatchEvent(new CustomEvent('session-resulted', { detail: payload }))
-        showToast('info', `Result declared: ${payload.result_number}`)
+        const toast1 = useToast()
+        toast1.info(`Result declared: ${payload.result_number}`)
         break
       
       case 'balance.updated':
@@ -158,7 +161,8 @@ export const useWebSocket = () => {
       case 'notification.created':
         console.log('🔔 NOTIFICATION EVENT RECEIVED! Dispatching to window...')
         window.dispatchEvent(new CustomEvent('notification-created', { detail: payload }))
-        showToast('info', payload.message || payload.title)
+        const toast2 = useToast()
+        toast2.info(payload.message || payload.title)
         break
       
       case 'notification.read':
@@ -177,24 +181,6 @@ export const useWebSocket = () => {
       } catch (error) {
         console.error('Failed to send WebSocket message:', error)
       }
-    }
-  }
-
-  const showToast = (type: string, message: string) => {
-    const toast = useToast()
-    
-    switch (type) {
-      case 'success':
-        toast.success(message)
-        break
-      case 'error':
-        toast.error(message)
-        break
-      case 'warning':
-        toast.warning(message)
-        break
-      default:
-        toast.info(message)
     }
   }
 

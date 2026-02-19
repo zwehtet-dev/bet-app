@@ -119,20 +119,6 @@
     >
       Sign Out
     </Button>
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="slide">
-        <div v-if="toast" class="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto">
-          <div :class="[
-            'p-4 rounded-lg text-center text-sm font-medium shadow-lg',
-            toast.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'
-          ]">
-            {{ toast.msg }}
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -150,8 +136,7 @@ definePageMeta({
 })
 
 const { user, logout } = useAuth()
-
-const toast = ref(null)
+const { success } = useToast()
 
 const getInitials = (name) => {
   if (!name) return '?'
@@ -163,15 +148,10 @@ const getInitials = (name) => {
     .slice(0, 2)
 }
 
-const showToast = (msg, type = 'success') => {
-  toast.value = { msg, type }
-  setTimeout(() => toast.value = null, 3000)
-}
-
 const handleLogout = async () => {
   if (confirm('Are you sure you want to logout?')) {
     await logout()
-    showToast('Logged out successfully', 'success')
+    success('Logged out successfully')
   }
 }
 
@@ -179,16 +159,3 @@ useHead({
   title: 'Profile - 2D3D'
 })
 </script>
-
-<style scoped>
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-enter-from,
-.slide-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-</style>

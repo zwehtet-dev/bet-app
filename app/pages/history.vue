@@ -83,9 +83,14 @@
                 <span class="text-sm text-muted-foreground">Total Stake</span>
                 <span class="font-semibold text-base">{{ formatBalance(bet.total_stake) }} <span class="text-xs text-muted-foreground">MMK</span></span>
               </div>
-              <div v-if="bet.status === 'settled' && bet.actual_win > 0" class="flex items-center justify-between pt-2 border-t">
-                <span class="text-sm text-muted-foreground">Win Amount</span>
-                <span class="font-bold text-base text-green-600 dark:text-green-400">+{{ formatBalance(bet.actual_win) }} <span class="text-xs">MMK</span></span>
+              <div v-if="bet.status === 'won' || bet.status === 'lost'" class="flex items-center justify-between pt-2 border-t">
+                <span class="text-sm text-muted-foreground">Settlement</span>
+                <span 
+                  class="font-bold text-base"
+                  :class="(bet.total_stake + bet.actual_win) > bet.total_stake ? 'text-green-600 dark:text-green-400' : (bet.total_stake + bet.actual_win) < bet.total_stake ? 'text-red-600 dark:text-red-400' : ''"
+                >
+                  {{ formatBalance(bet.total_stake + bet.actual_win) }} <span class="text-xs">MMK</span>
+                </span>
               </div>
             </div>
           </CardContent>
@@ -200,12 +205,17 @@
 
           <div class="pt-4 border-t space-y-2">
             <div class="flex justify-between">
-              <span class="text-muted-foreground">Total Amount</span>
+              <span class="text-muted-foreground">Total Stake</span>
               <span class="font-semibold">{{ formatBalance(selectedBet.total_amount || selectedBet.total_stake) }} MMK</span>
             </div>
-            <div v-if="selectedBet.actual_win" class="flex justify-between">
-              <span class="text-muted-foreground">Win Amount</span>
-              <span class="font-semibold text-green-600 dark:text-green-400">{{ formatBalance(selectedBet.actual_win) }} MMK</span>
+            <div v-if="selectedBet.actual_win !== null && selectedBet.actual_win !== undefined" class="flex justify-between">
+              <span class="text-muted-foreground">Settlement</span>
+              <span 
+                class="font-semibold"
+                :class="((selectedBet.total_amount || selectedBet.total_stake) + selectedBet.actual_win) > (selectedBet.total_amount || selectedBet.total_stake) ? 'text-green-600 dark:text-green-400' : ((selectedBet.total_amount || selectedBet.total_stake) + selectedBet.actual_win) < (selectedBet.total_amount || selectedBet.total_stake) ? 'text-red-600 dark:text-red-400' : ''"
+              >
+                {{ formatBalance((selectedBet.total_amount || selectedBet.total_stake) + selectedBet.actual_win) }} MMK
+              </span>
             </div>
           </div>
         </CardContent>
