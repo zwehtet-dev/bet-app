@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app-nuxt:
-    image: ghcr.io/${GITHUB_REPOSITORY}/app-nuxt:latest
+    image: ghcr.io/${GITHUB_REPOSITORY}:latest
     container_name: app-nuxt-prod
     restart: unless-stopped
     ports:
