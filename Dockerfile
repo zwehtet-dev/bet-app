@@ -12,9 +12,6 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Copy environment file
-COPY .env.production .env
-
 # Build arguments for public runtime config
 ARG NUXT_PUBLIC_API_BASE_URL
 ARG NUXT_PUBLIC_WS_URL
