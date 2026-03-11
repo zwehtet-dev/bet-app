@@ -1,6 +1,7 @@
 <template>
   <NuxtLayout>
     <NuxtPage />
+    <PWAInstallPrompt />
   </NuxtLayout>
 </template>
 
