@@ -36,7 +36,6 @@ RUN npm ci --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/public ./public
 
 # Expose port 3000
 EXPOSE 3000
