@@ -169,8 +169,8 @@ export default defineNuxtConfig({
   },
   
   experimental: {
-    payloadExtraction: true,
-    renderJsonPayloads: true,
+    payloadExtraction: false,
+    renderJsonPayloads: false,
     componentIslands: false
   },
   
