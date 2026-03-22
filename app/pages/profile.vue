@@ -131,7 +131,6 @@ import Badge from '~/components/ui/badge/Badge.vue'
 import { UserRoundPen } from 'lucide-vue-next'
 
 definePageMeta({
-  middleware: 'auth',
   keepalive: true
 })
 

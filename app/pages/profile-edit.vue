@@ -63,7 +63,6 @@ import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 definePageMeta({
-  middleware: 'auth',
   keepalive: true
 })
 

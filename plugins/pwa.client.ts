@@ -6,9 +6,8 @@ export default defineNuxtPlugin(() => {
       });
     });
 
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
+    // Don't reload on controller change to preserve auth state
+    // The service worker will handle updates automatically
   }
 
   if (process.client) {

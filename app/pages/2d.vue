@@ -215,7 +215,6 @@ import { Input } from '@/components/ui/input'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 definePageMeta({
-  middleware: 'auth',
   keepalive: true
 })
 

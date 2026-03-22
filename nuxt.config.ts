@@ -12,9 +12,9 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: '2D3D Betting',
-      short_name: '2D3D',
-      description: 'Myanmar 2D3D Lottery Betting App',
+      name: 'Soccer King',
+      short_name: 'SK',
+      description: 'Myanmar 2D3D Soccer Betting App',
       theme_color: '#000000',
       background_color: '#000000',
       display: 'standalone',
@@ -218,7 +218,7 @@ export default defineNuxtConfig({
     head: {
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
-      title: '2D3D Betting',
+      title: 'Soccer King',
   meta: [
         { name: 'description', content: 'Myanmar 2D3D Lottery Betting App' },
         { name: 'theme-color', content: '#000000' },

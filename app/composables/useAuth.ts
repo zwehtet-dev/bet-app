@@ -1,6 +1,11 @@
 export const useAuth = () => {
   const user = useState<any>('user', () => null)
-  const token = useCookie('auth_token')
+  const token = useCookie('auth_token', {
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/'
+  })
   const api = useApi()
 
   const login = async (identifier: string, password: string) => {

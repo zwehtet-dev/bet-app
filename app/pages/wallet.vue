@@ -277,6 +277,24 @@
           </div>
 
           <div>
+            <label class="text-sm font-medium mb-2 block">Account Name <span class="text-red-500">*</span></label>
+            <Input
+              v-model="withdrawAccountName"
+              type="text"
+              placeholder="Enter your account name"
+            />
+          </div>
+
+          <div>
+            <label class="text-sm font-medium mb-2 block">Account Number <span class="text-red-500">*</span></label>
+            <Input
+              v-model="withdrawAccountNumber"
+              type="text"
+              placeholder="Enter your account number"
+            />
+          </div>
+
+          <div>
             <label class="text-sm font-medium mb-2 block">Note (Optional)</label>
             <textarea
               v-model="note"
@@ -289,7 +307,7 @@
           <Button
             @click="submitWithdraw"
             class="w-full"
-            :disabled="isSubmitting || !withdrawAmount || !selectedPaymentMethod"
+            :disabled="isSubmitting || !withdrawAmount || !selectedPaymentMethod || !withdrawAccountName || !withdrawAccountNumber"
           >
             {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
           </Button>
@@ -305,10 +323,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
-
-definePageMeta({
-  middleware: 'auth'
-})
 
 const api = useApi()
 const { user } = useAuth()
@@ -328,6 +342,8 @@ const withdrawAmount = ref<number>(0)
 const selectedPaymentMethod = ref('')
 const transactionId = ref('')
 const note = ref('')
+const withdrawAccountName = ref('')
+const withdrawAccountNumber = ref('')
 
 const isLoadingRequests = ref(false)
 const isLoadingTransactions = ref(false)
@@ -477,7 +493,7 @@ const submitDeposit = async () => {
 }
 
 const submitWithdraw = async () => {
-  if (!withdrawAmount.value || !selectedPaymentMethod.value) return
+  if (!withdrawAmount.value || !selectedPaymentMethod.value || !withdrawAccountName.value || !withdrawAccountNumber.value) return
 
   const availableBalance = (balance.value?.balance || 0) - (balance.value?.locked_balance || 0)
   if (withdrawAmount.value > availableBalance) {
@@ -492,6 +508,8 @@ const submitWithdraw = async () => {
       type: 'withdrawal',
       amount: withdrawAmount.value,
       payment_method_id: selectedPaymentMethod.value,
+      account_name: withdrawAccountName.value,
+      account_number: withdrawAccountNumber.value,
       notes: note.value
     })
 
@@ -510,6 +528,8 @@ const submitWithdraw = async () => {
     showWithdrawModal.value = false
     withdrawAmount.value = 0
     selectedPaymentMethod.value = ''
+    withdrawAccountName.value = ''
+    withdrawAccountNumber.value = ''
     note.value = ''
     
     await loadPaymentRequests()

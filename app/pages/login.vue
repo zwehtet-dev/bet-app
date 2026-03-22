@@ -3,7 +3,7 @@
     <Card class="w-full max-w-md">
       <CardHeader class="space-y-1 text-center">
         <div class="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-4">
-          <img src="/images/logo.jpg" alt="2D3D Logo" class="w-full h-full object-cover">
+          <img src="/images/logo.png" alt="2D3D Logo" class="w-full h-full object-cover">
         </div>
         <CardTitle class="text-2xl font-semibold">Welcome Back</CardTitle>
         <CardDescription>

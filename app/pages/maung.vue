@@ -60,7 +60,9 @@
             <!-- Markets -->
             <div v-if="match.markets && match.markets.length > 0" class="space-y-3">
               <div v-for="market in match.markets" :key="market.id" class="p-3 rounded-lg bg-muted/50">
-                <p class="text-sm font-medium mb-2">{{ market.odds_display }}</p>
+                <div class="flex" :class="{'justify-end':market.odd_type=='away'}">
+                  <p class="text-sm font-medium mb-2">{{ market.odds_display }}</p>
+                </div>
                 <div class="grid grid-cols-2 gap-2">
                   <Button
                     v-for="selection in market.available_selections"
@@ -133,10 +135,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
-
-definePageMeta({
-  middleware: 'auth'
-})
 
 const { getMatches, placeMaungBet } = useFootballBetting()
 const toast = useToast()

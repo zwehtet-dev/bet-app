@@ -114,10 +114,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
 const api = useApi()
 const { fetchUnreadCount, decrementUnreadCount, resetUnreadCount } = useNotifications()
 

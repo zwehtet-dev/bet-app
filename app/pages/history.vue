@@ -230,10 +230,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
 const { getBetHistory: get2DBetHistory } = use2DBetting()
 const { getBetHistory: get3DBetHistory } = use3DBetting()
 const { getBetHistory: getFootballBetHistory } = useFootballBetting()

@@ -164,10 +164,6 @@ import { Input } from '@/components/ui/input'
 import VirtualNumberGrid from '@/components/VirtualNumberGrid.vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
 const { getCurrentSession, getAvailableDigits, placeBet: placeBetApi, getRecentResults } = use2DBetting()
 const { user } = useAuth()
 const { connect, disconnect } = useWebSocket()

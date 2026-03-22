@@ -1,11 +1,11 @@
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(async (nuxtApp) => {
   const { fetchUser, isAuthenticated } = useAuth()
   const { fetchUnreadCount } = useNotifications()
   const token = useCookie('auth_token')
   
   console.log('🔐 Auth plugin initializing, token exists:', !!token.value)
   
-  // If token exists, fetch user data on app initialization
+  // If token exists, fetch user data on app initialization (blocking)
   if (token.value) {
     console.log('🔐 Token found, fetching user...')
     await fetchUser()

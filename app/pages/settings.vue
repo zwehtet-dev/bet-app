@@ -35,7 +35,7 @@
           <h2 class="text-lg font-semibold mb-4">About</h2>
           <div class="space-y-2 text-sm text-muted-foreground">
             <p>Version: 1.0.0</p>
-            <p>© 2026 2D3D Betting Platform</p>
+            <p>© 2026 Soccer King</p>
           </div>
         </div>
       </div>
@@ -44,10 +44,6 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  middleware: 'auth'
-})
-
 const { notificationsEnabled, toggleNotifications } = useToast()
 
 useHead({
