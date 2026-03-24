@@ -9,35 +9,35 @@
     </div>
 
     <div class="space-y-2">
-      <label for="current_password" class="text-sm font-medium">Current Password</label>
+      <label for="current_password" class="text-sm font-medium">{{ t('Current Password', 'လက်ရှိစကားဝှက်') }}</label>
       <Input
         id="current_password"
         v-model="currentPassword"
         type="password"
-        placeholder="Enter current password"
+        :placeholder="t('Enter current password', 'လက်ရှိစကားဝှက်ထည့်ပါ')"
         @keyup.enter="handleSubmit"
       />
     </div>
 
     <div class="space-y-2">
-      <label for="new_password" class="text-sm font-medium">New Password</label>
+      <label for="new_password" class="text-sm font-medium">{{ t('New Password', 'စကားဝှက်အသစ်') }}</label>
       <Input
         id="new_password"
         v-model="newPassword"
         type="password"
-        placeholder="Enter new password"
+        :placeholder="t('Enter new password', 'စကားဝှက်အသစ်ထည့်ပါ')"
         @keyup.enter="handleSubmit"
       />
-      <p class="text-xs text-muted-foreground">Minimum 8 characters</p>
+      <p class="text-xs text-muted-foreground">{{ t('Minimum 8 characters', 'အနည်းဆုံး ၈ လုံး') }}</p>
     </div>
 
     <div class="space-y-2">
-      <label for="confirm_password" class="text-sm font-medium">Confirm New Password</label>
+      <label for="confirm_password" class="text-sm font-medium">{{ t('Confirm New Password', 'စကားဝှက်အသစ်အတည်ပြုရန်') }}</label>
       <Input
         id="confirm_password"
         v-model="confirmPassword"
         type="password"
-        placeholder="Confirm new password"
+        :placeholder="t('Confirm new password', 'စကားဝှက်အသစ်ပြန်ထည့်ပါ')"
         @keyup.enter="handleSubmit"
       />
     </div>
@@ -48,13 +48,13 @@
         class="flex-1"
         :disabled="isSubmitting"
       >
-        {{ isSubmitting ? 'Updating...' : 'Update Password' }}
+        {{ isSubmitting ? t('Updating...', 'ပြောင်းလဲနေသည်...') : t('Update Password', 'စကားဝှက်ပြောင်းမည်') }}
       </Button>
       <Button
         @click="navigateTo('/profile')"
         variant="outline"
       >
-        Cancel
+        {{ t('Cancel', 'မလုပ်တော့ပါ') }}
       </Button>
     </div>
   </div>
@@ -67,6 +67,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const api = useApi()
+const { locale, t } = useLanguage()
 
 const currentPassword = ref('')
 const newPassword = ref('')

@@ -4,11 +4,11 @@
     <Card v-if="isAgent">
       <CardContent class="pt-6">
         <div class="text-center space-y-2">
-          <p class="text-sm text-muted-foreground">Agent Balance</p>
+          <p class="text-sm text-muted-foreground">{{ t('Agent Balance', 'အေးဂျင့်လက်ကျန်ငွေ') }}</p>
           <p :class="['text-4xl font-bold', agentData?.calculated_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
             {{ agentData?.calculated_balance >= 0 ? '+' : '' }}{{ formatBalance(agentData?.calculated_balance || 0) }}
           </p>
-          <p class="text-xs text-muted-foreground">Payable - Receivable</p>
+          <p class="text-xs text-muted-foreground">{{ t('Payable - Receivable', 'ပေးရန် - ရရန်') }}</p>
         </div>
         
         <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
@@ -58,20 +58,20 @@
     <Card>
       <CardContent class="pt-6">
         <div class="text-center space-y-2">
-          <p class="text-sm text-muted-foreground">{{ isAgent ? 'Personal Wallet Balance' : 'Total Balance' }}</p>
+          <p class="text-sm text-muted-foreground">{{ isAgent ? t('Personal Wallet Balance', 'ကိုယ်ပိုင်ပိုက်ဆံအိတ်လက်ကျန်') : t('Total Balance', 'စုစုပေါင်းလက်ကျန်ငွေ') }}</p>
           <p class="text-4xl font-bold">{{ formatBalance(balance?.balance || 0) }}</p>
-          <p class="text-xs text-muted-foreground">MMK</p>
+          <p class="text-xs text-muted-foreground">{{ t('MMK', 'ကျပ်') }}</p>
         </div>
         
         <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
           <div class="text-center">
-            <p class="text-xs text-muted-foreground mb-1">Available</p>
+            <p class="text-xs text-muted-foreground mb-1">{{ t('Available', 'သုံးစွဲနိုင်သော') }}</p>
             <p class="text-lg font-semibold text-green-600 dark:text-green-400">
               {{ formatBalance((balance?.balance || 0) - (balance?.locked_balance || 0)) }}
             </p>
           </div>
           <div class="text-center">
-            <p class="text-xs text-muted-foreground mb-1">Locked</p>
+            <p class="text-xs text-muted-foreground mb-1">{{ t('Locked', 'ပိတ်ဆို့ထားသော') }}</p>
             <p class="text-lg font-semibold text-orange-600 dark:text-orange-400">
               {{ formatBalance(balance?.locked_balance || 0) }}
             </p>
@@ -83,13 +83,13 @@
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Deposit
+            {{ t('Deposit', 'ငွေဖြည့်မည်') }}
           </Button>
           <Button @click="showWithdrawModal = true" variant="outline" class="w-full">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
             </svg>
-            Withdraw
+            {{ t('Withdraw', 'ငွေထုတ်မည်') }}
           </Button>
         </div>
       </CardContent>
@@ -99,7 +99,7 @@
     <Card>
       <CardHeader>
         <div class="flex items-center justify-between">
-          <CardTitle>Payment Requests</CardTitle>
+          <CardTitle>{{ t('Payment Requests', 'ငွေပေးချေမှုတောင်းဆိုမှုများ') }}</CardTitle>
           <Button variant="ghost" size="sm" @click="loadPaymentRequests">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -137,7 +137,7 @@
     <!-- Transaction History -->
     <Card>
       <CardHeader>
-        <CardTitle>Recent Transactions</CardTitle>
+        <CardTitle>{{ t('Recent Transactions', 'မကြာသေးမီ ငွေသွင်းထုတ်မှုများ') }}</CardTitle>
       </CardHeader>
       <CardContent>
         <SkeletonLoader v-if="isLoadingTransactions && transactions.length === 0" type="list-item" />
@@ -326,6 +326,7 @@ import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const api = useApi()
 const { user } = useAuth()
+const { locale, t } = useLanguage()
 
 const isAgent = computed(() => user.value?.role === 'agent')
 const agentData = computed(() => user.value?.agent)

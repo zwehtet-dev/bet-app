@@ -4,13 +4,13 @@
       <div class="space-y-6">
         <!-- Notifications Section -->
         <div class="bg-card rounded-lg border p-6">
-          <h2 class="text-lg font-semibold mb-4">Notifications</h2>
+          <h2 class="text-lg font-semibold mb-4">{{ t('Notifications', 'အသိပေးချက်များ') }}</h2>
           
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <div class="flex-1">
-                <h3 class="font-medium">Push Notifications</h3>
-                <p class="text-sm text-muted-foreground">Receive real-time notifications for bets and updates</p>
+                <h3 class="font-medium">{{ t('Push Notifications', 'အသိပေးချက်များ') }}</h3>
+                <p class="text-sm text-muted-foreground">{{ t('Receive real-time notifications for bets and updates', 'လောင်းကစားမှုနှင့် အပ်ဒိတ်များအတွက် အချိန်နှင့်တပြေးညီ အသိပေးချက်များရယူပါ') }}</p>
               </div>
               <button
                 @click="toggleNotifications"
@@ -32,9 +32,9 @@
 
         <!-- About Section -->
         <div class="bg-card rounded-lg border p-6">
-          <h2 class="text-lg font-semibold mb-4">About</h2>
+          <h2 class="text-lg font-semibold mb-4">{{ t('About', 'အကြောင်း') }}</h2>
           <div class="space-y-2 text-sm text-muted-foreground">
-            <p>Version: 1.0.0</p>
+            <p>{{ t('Version', 'ဗားရှင်း') }}: 1.0.0</p>
             <p>© 2026 Soccer King</p>
           </div>
         </div>
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 const { notificationsEnabled, toggleNotifications } = useToast()
+const { locale, t } = useLanguage()
 
 useHead({
   title: 'Settings - 2D3D'

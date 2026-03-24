@@ -5,9 +5,9 @@
         <div class="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-4">
           <img src="/images/logo.png" alt="2D3D Logo" class="w-full h-full object-cover">
         </div>
-        <CardTitle class="text-2xl font-semibold">Welcome Back</CardTitle>
+        <CardTitle class="text-2xl font-semibold">{{ t('Welcome Back', 'ပြန်လည်ကြိုဆိုပါတယ်') }}</CardTitle>
         <CardDescription>
-          Enter your credentials to access your account
+          {{ t('Enter your credentials to access your account', 'သင့်အကောင့်ကို ဝင်ရောက်ရန် အချက်အလက်များ ထည့်သွင်းပါ') }}
         </CardDescription>
       </CardHeader>
       
@@ -17,24 +17,24 @@
         </div>
 
         <div class="space-y-2">
-          <label for="identifier" class="text-sm font-medium">Phone / Email </label>
+          <label for="identifier" class="text-sm font-medium">{{ t('Phone / Email', 'ဖုန်း / အီးမေးလ်') }}</label>
           <Input
             id="identifier"
             v-model="identifier"
             type="text"
-            placeholder="09xxxxxxxxx or email or username"
+            :placeholder="t('09xxxxxxxxx or email or username', '09xxxxxxxxx သို့မဟုတ် အီးမေးလ် သို့မဟုတ် အသုံးပြုသူအမည်')"
             class="w-full"
             @keyup.enter="handleLogin"
           />
         </div>
 
         <div class="space-y-2">
-          <label for="password" class="text-sm font-medium">Password</label>
+          <label for="password" class="text-sm font-medium">{{ t('Password', 'စကားဝှက်') }}</label>
           <Input
             id="password"
             v-model="password"
             type="password"
-            placeholder="Enter your password"
+            :placeholder="t('Enter your password', 'စကားဝှက်ထည့်ပါ')"
             class="w-full"
             @keyup.enter="handleLogin"
           />
@@ -45,15 +45,15 @@
           class="w-full"
           :disabled="isLoading"
         >
-          {{ isLoading ? 'Signing in...' : 'Sign In' }}
+          {{ isLoading ? t('Signing in...', 'ဝင်ရောက်နေသည်...') : t('Sign In', 'ဝင်ရောက်မည်') }}
         </Button>
 
         <Separator />
 
         <div class="text-center text-sm">
-          <span class="text-muted-foreground">Don't have an account? </span>
+          <span class="text-muted-foreground">{{ t("Don't have an account?", 'အကောင့်မရှိသေးဘူးလား?') }} </span>
           <NuxtLink to="/signup" class="font-medium hover:underline">
-            Sign up
+            {{ t('Sign up', 'အကောင့်ဖွင့်မည်') }}
           </NuxtLink>
         </div>
       </CardContent>
@@ -73,6 +73,7 @@ definePageMeta({
 })
 
 const { login } = useAuth()
+const { locale, t } = useLanguage()
 const identifier = ref('')
 const password = ref('')
 const isLoading = ref(false)

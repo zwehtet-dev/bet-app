@@ -28,69 +28,61 @@
         <Card 
           v-for="bet in bets" 
           :key="bet.id" 
-          class="cursor-pointer hover:bg-accent/50 transition-colors active:scale-[0.98]" 
+          class="cursor-pointer hover:bg-white/5 transition-all active:scale-[0.99] bg-white/3 backdrop-blur-md border border-white/5 rounded-lg py-1" 
           @click="viewBetDetails(bet)"
         >
-          <CardContent class="p-4">
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex-1 min-w-0">
-                <p class="font-semibold text-sm truncate">{{ bet.slip_number }}</p>
-                <p class="text-xs text-muted-foreground">{{ formatDateTime(bet.created_at) }}</p>
-              </div>
-              <div :class="[
-                'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2',
-                getStatusClass(bet.status)
-              ]">
-                {{ bet.status.toUpperCase() }}
-              </div>
-            </div>
-
+          <CardContent class="p-2.5">
             <!-- 2D/3D Bet Info -->
-            <div v-if="activeTab === '2d' || activeTab === '3d'" class="space-y-2">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-muted-foreground">Session</span>
-                <span class="font-medium text-xs">{{ bet.session?.type }} - {{ formatDate(bet.session?.date) }}</span>
+            <div v-if="activeTab === '2d' || activeTab === '3d'">
+              <!-- Single Line Header -->
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] text-muted-foreground">{{ formatDateTime(bet.created_at) }}</span>
+                  <span class="text-[9px] text-muted-foreground/60">·</span>
+                  <span class="text-[10px] text-primary/80">{{ bet.session?.type }}</span>
+                  <div :class="[
+                    'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase',
+                    getStatusClass(bet.status)
+                  ]">
+                    {{ bet.status }}
+                  </div>
+                </div>
+                <span class="text-base font-bold">{{ formatBalance(bet.total_amount) }}</span>
               </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-muted-foreground">Numbers</span>
-                <span class="font-medium">{{ bet.items?.length || 0 }} numbers</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Total Bet</span>
-                <span class="font-semibold text-base">{{ formatBalance(bet.total_amount) }} <span class="text-xs text-muted-foreground">MMK</span></span>
-              </div>
-              <div v-if="bet.status === 'won'" class="flex items-center justify-between pt-2 border-t">
-                <span class="text-sm text-muted-foreground">Win Amount</span>
-                <span class="font-bold text-base text-green-600 dark:text-green-400">+{{ formatBalance(bet.actual_win) }} <span class="text-xs">MMK</span></span>
-              </div>
-              <div v-if="bet.session?.result" class="flex items-center justify-between pt-2 border-t">
-                <span class="text-sm text-muted-foreground">Result</span>
-                <span class="text-2xl font-bold text-primary">{{ bet.session.result }}</span>
+              
+              <!-- Compact Numbers -->
+              <div v-if="bet.items && bet.items.length > 0" class="flex flex-wrap gap-1">
+                <span 
+                  v-for="(item, idx) in bet.items.slice(0, 15)" 
+                  :key="idx"
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-xs font-bold',
+                    item.is_winner ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-foreground/80'
+                  ]"
+                >
+                  {{ item.number }}
+                </span>
+                <span v-if="bet.items.length > 15" class="px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  +{{ bet.items.length - 15 }}
+                </span>
               </div>
             </div>
 
             <!-- Football Bet Info -->
-            <div v-else class="space-y-2">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-muted-foreground">Type</span>
-                <span class="font-medium">{{ bet.bet_type?.toUpperCase() }}</span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-muted-foreground">Matches</span>
-                <span class="font-medium">{{ bet.total_matches || 0 }} matches</span>
-              </div>
+            <div v-else>
               <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Total Stake</span>
-                <span class="font-semibold text-base">{{ formatBalance(bet.total_stake) }} <span class="text-xs text-muted-foreground">MMK</span></span>
-              </div>
-              <div v-if="bet.status === 'won' || bet.status === 'lost'" class="flex items-center justify-between pt-2 border-t">
-                <span class="text-sm text-muted-foreground">Settlement</span>
-                <span 
-                  class="font-bold text-base"
-                  :class="(bet.total_stake + bet.actual_win) > bet.total_stake ? 'text-green-600 dark:text-green-400' : (bet.total_stake + bet.actual_win) < bet.total_stake ? 'text-red-600 dark:text-red-400' : ''"
-                >
-                  {{ formatBalance(bet.total_stake + bet.actual_win) }} <span class="text-xs">MMK</span>
-                </span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] text-muted-foreground">{{ formatDateTime(bet.created_at) }}</span>
+                  <span class="text-[9px] text-muted-foreground/60">·</span>
+                  <span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[9px] font-bold uppercase">{{ bet.bet_type }}</span>
+                  <div :class="[
+                    'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase',
+                    getStatusClass(bet.status)
+                  ]">
+                    {{ bet.status }}
+                  </div>
+                </div>
+                <span class="text-base font-bold">{{ formatBalance(bet.total_stake) }}</span>
               </div>
             </div>
           </CardContent>
@@ -103,13 +95,13 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Loading more...
+            {{ t('Loading more...', 'နောက်ထပ်ရယူနေသည်...') }}
           </div>
         </div>
 
         <!-- End of list indicator -->
         <div v-else-if="hasReachedEnd" class="py-4 text-center">
-          <p class="text-sm text-muted-foreground">No more bets to load</p>
+          <p class="text-sm text-muted-foreground">{{ t('No more bets to load', 'နောက်ထပ်လောင်းကစားမှုမရှိတော့ပါ') }}</p>
         </div>
       </div>
 
@@ -117,17 +109,17 @@
         <svg class="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <p class="text-muted-foreground">No bets found</p>
-        <p class="text-sm text-muted-foreground/70 mt-1">Start betting to see your history</p>
+        <p class="text-muted-foreground">{{ t('No bets found', 'လောင်းကစားမှုမရှိပါ') }}</p>
+        <p class="text-sm text-muted-foreground/70 mt-1">{{ t('Start betting to see your history', 'သင့်မှတ်တမ်းကြည့်ရန် လောင်းကစားစတင်ပါ') }}</p>
       </div>
     </div>
 
     <!-- Bet Details Modal -->
     <div v-if="selectedBet" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="selectedBet = null">
-      <Card class="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <Card class="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white/5 backdrop-blur-xl border-white/10">
         <CardHeader>
           <div class="flex items-center justify-between">
-            <CardTitle>Bet Details</CardTitle>
+            <CardTitle>{{ t('Bet Details', 'လောင်းကစားအသေးစိတ်') }}</CardTitle>
             <Button variant="ghost" size="icon" @click="selectedBet = null">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -137,19 +129,19 @@
         </CardHeader>
         <CardContent class="space-y-4">
           <div>
-            <p class="text-sm text-muted-foreground">Slip Number</p>
+            <p class="text-sm text-muted-foreground">{{ t('Slip Number', 'စလစ်နံပါတ်') }}</p>
             <p class="font-semibold">{{ selectedBet.slip_number }}</p>
           </div>
           
           <div>
-            <p class="text-sm text-muted-foreground">Status</p>
+            <p class="text-sm text-muted-foreground">{{ t('Status', 'အခြေအနေ') }}</p>
             <div :class="['inline-block px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedBet.status)]">
               {{ selectedBet.status.toUpperCase() }}
             </div>
           </div>
 
           <div>
-            <p class="text-sm text-muted-foreground">Created At</p>
+            <p class="text-sm text-muted-foreground">{{ t('Created At', 'ဖန်တီးသည့်အချိန်') }}</p>
             <p class="font-medium">{{ formatDateTime(selectedBet.created_at) }}</p>
           </div>
 
@@ -205,16 +197,16 @@
 
           <div class="pt-4 border-t space-y-2">
             <div class="flex justify-between">
-              <span class="text-muted-foreground">Total Stake</span>
-              <span class="font-semibold">{{ formatBalance(selectedBet.total_amount || selectedBet.total_stake) }} MMK</span>
+              <span class="text-muted-foreground">{{ t('Total Stake', 'စုစုပေါင်းလောင်းငွေ') }}</span>
+              <span class="font-semibold">{{ formatBalance(selectedBet.total_amount || selectedBet.total_stake) }} {{ t('MMK', 'ကျပ်') }}</span>
             </div>
             <div v-if="selectedBet.actual_win !== null && selectedBet.actual_win !== undefined" class="flex justify-between">
-              <span class="text-muted-foreground">Settlement</span>
+              <span class="text-muted-foreground">{{ t('Settlement', 'ရလဒ်') }}</span>
               <span 
                 class="font-semibold"
-                :class="((selectedBet.total_amount || selectedBet.total_stake) + selectedBet.actual_win) > (selectedBet.total_amount || selectedBet.total_stake) ? 'text-green-600 dark:text-green-400' : ((selectedBet.total_amount || selectedBet.total_stake) + selectedBet.actual_win) < (selectedBet.total_amount || selectedBet.total_stake) ? 'text-red-600 dark:text-red-400' : ''"
+                :class="selectedBet.actual_win > 0 ? 'text-green-600 dark:text-green-400' : selectedBet.actual_win < 0 ? 'text-red-600 dark:text-red-400' : ''"
               >
-                {{ formatBalance((selectedBet.total_amount || selectedBet.total_stake) + selectedBet.actual_win) }} MMK
+                {{ formatBalance(selectedBet.actual_win) }} {{ t('MMK', 'ကျပ်') }}
               </span>
             </div>
           </div>
@@ -233,12 +225,13 @@ import SkeletonLoader from '@/components/SkeletonLoader.vue'
 const { getBetHistory: get2DBetHistory } = use2DBetting()
 const { getBetHistory: get3DBetHistory } = use3DBetting()
 const { getBetHistory: getFootballBetHistory } = useFootballBetting()
+const { locale, t } = useLanguage()
 
 const tabs = [
   { label: '2D', value: '2d' },
   { label: '3D', value: '3d' },
-  { label: 'Body', value: 'body' },
-  { label: 'Maung', value: 'maung' }
+  { label: t('Body', 'ဘော်ဒီ'), value: 'body' },
+  { label: t('Maung', 'မောင်:'), value: 'maung' }
 ]
 
 const activeTab = ref('2d')

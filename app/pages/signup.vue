@@ -5,9 +5,9 @@
         <div class="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-4">
           <img src="/images/logo.png" alt="2D3D Logo" class="w-full h-full object-cover">
         </div>
-        <CardTitle class="text-2xl font-semibold">Create Account</CardTitle>
+        <CardTitle class="text-2xl font-semibold">{{ t('Create Account', 'အကောင့်ဖွင့်မည်') }}</CardTitle>
         <CardDescription>
-          Sign up to start betting
+          {{ t('Sign up to start betting', 'လောင်းကစားရန် အကောင့်ဖွင့်ပါ') }}
         </CardDescription>
       </CardHeader>
       
@@ -17,7 +17,7 @@
         </div>
 
         <div class="space-y-2">
-          <label for="username" class="text-sm font-medium">Username</label>
+          <label for="username" class="text-sm font-medium">{{ t('Username', 'အသုံးပြုသူအမည်') }}</label>
           <Input
             id="username"
             v-model="formData.username"
@@ -28,7 +28,7 @@
         </div>
 
         <div class="space-y-2">
-          <label for="email" class="text-sm font-medium">Email</label>
+          <label for="email" class="text-sm font-medium">{{ t('Email', 'အီးမေးလ်') }}</label>
           <Input
             id="email"
             v-model="formData.email"
@@ -39,7 +39,7 @@
         </div>
 
         <div class="space-y-2">
-          <label for="phone" class="text-sm font-medium">Phone Number</label>
+          <label for="phone" class="text-sm font-medium">{{ t('Phone Number', 'ဖုန်းနံပါတ်') }}</label>
           <Input
             id="phone"
             v-model="formData.phone"
@@ -50,23 +50,23 @@
         </div>
 
         <div class="space-y-2">
-          <label for="password" class="text-sm font-medium">Password</label>
+          <label for="password" class="text-sm font-medium">{{ t('Password', 'စကားဝှက်') }}</label>
           <Input
             id="password"
             v-model="formData.password"
             type="password"
-            placeholder="Minimum 8 characters"
+            :placeholder="t('Minimum 8 characters', 'အနည်းဆုံး ၈ လုံး')"
             class="w-full"
           />
         </div>
 
         <div class="space-y-2">
-          <label for="password_confirmation" class="text-sm font-medium">Confirm Password</label>
+          <label for="password_confirmation" class="text-sm font-medium">{{ t('Confirm Password', 'စကားဝှက်အတည်ပြုရန်') }}</label>
           <Input
             id="password_confirmation"
             v-model="formData.password_confirmation"
             type="password"
-            placeholder="Re-enter password"
+            :placeholder="t('Re-enter password', 'စကားဝှက်ပြန်ထည့်ပါ')"
             class="w-full"
             @keyup.enter="handleSignup"
           />
@@ -77,15 +77,15 @@
           class="w-full"
           :disabled="isLoading"
         >
-          {{ isLoading ? 'Creating Account...' : 'Sign Up' }}
+          {{ isLoading ? t('Creating Account...', 'အကောင့်ဖွင့်နေသည်...') : t('Sign Up', 'အကောင့်ဖွင့်မည်') }}
         </Button>
 
         <Separator />
 
         <div class="text-center text-sm">
-          <span class="text-muted-foreground">Already have an account? </span>
+          <span class="text-muted-foreground">{{ t('Already have an account?', 'အကောင့်ရှိပြီးသားလား?') }} </span>
           <NuxtLink to="/login" class="font-medium hover:underline">
-            Sign in
+            {{ t('Sign in', 'ဝင်ရောက်မည်') }}
           </NuxtLink>
         </div>
       </CardContent>
@@ -105,6 +105,7 @@ definePageMeta({
 })
 
 const api = useApi()
+const { locale, t } = useLanguage()
 
 const formData = ref({
   name: '',

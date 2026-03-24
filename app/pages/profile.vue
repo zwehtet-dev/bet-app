@@ -31,7 +31,7 @@
           <UserRoundPen class="w-5 h-5" />
         </div>
         <div class="flex-1 text-left">
-          <p class="text-sm font-medium">Edit Profile</p>
+          <p class="text-sm font-medium">{{ t('Edit Profile', 'ပရိုဖိုင်းပြင်ဆင်ရန်') }}</p>
         </div>
         <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -48,7 +48,7 @@
           </svg>
         </div>
         <div class="flex-1 text-left">
-          <p class="text-sm font-medium">Change Password</p>
+          <p class="text-sm font-medium">{{ t('Change Password', 'စကားဝှက်ပြောင်းရန်') }}</p>
         </div>
         <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -66,7 +66,7 @@
           </svg>
         </div>
         <div class="flex-1 text-left">
-          <p class="text-sm font-medium">Settings</p>
+          <p class="text-sm font-medium">{{ t('Settings', 'ဆက်တင်များ') }}</p>
         </div>
         <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -83,7 +83,7 @@
           </svg>
         </div>
         <div class="flex-1 text-left">
-          <p class="text-sm font-medium">Results</p>
+          <p class="text-sm font-medium">{{ t('Results', 'ရလဒ်များ') }}</p>
         </div>
         <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -94,7 +94,7 @@
 
     <!-- Support -->
     <Card>
-      <CardHeader>Customer Support</CardHeader>
+      <CardHeader>{{ t('Customer Support', 'ဖောက်သည်ဝန်ဆောင်မှု') }}</CardHeader>
       <CardContent class="">
         <div class="flex items-center gap-3">
           <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -117,7 +117,7 @@
       class="w-full"
       size="lg"
     >
-      Sign Out
+      {{ t('Sign Out', 'ထွက်မည်') }}
     </Button>
   </div>
 </template>
@@ -136,6 +136,7 @@ definePageMeta({
 
 const { user, logout } = useAuth()
 const { success } = useToast()
+const { locale, t } = useLanguage()
 
 const getInitials = (name) => {
   if (!name) return '?'

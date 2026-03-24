@@ -2,23 +2,23 @@
   <div class="container mx-auto p-4 space-y-6">
     
     <!-- Announcements Marquee -->
-    <div v-if="announcements.length > 0" class="relative overflow-hidden rounded-lg border bg-muted/50 py-3">
+    <div v-if="announcements.length > 0" class="relative overflow-hidden rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl py-3">
       <div class="flex animate-marquee whitespace-nowrap">
-        <span v-for="(a, i) in [...announcements, ...announcements]" :key="i" class="mx-8 text-sm text-muted-foreground">
+        <span v-for="(a, i) in [...announcements, ...announcements]" :key="i" class="mx-8 text-sm text-gray-300">
           <span class="text-primary font-medium">•</span> {{ a.message }}
         </span>
       </div>
     </div>
 
     <!-- Balance Card (hidden for agents) -->
-    <Card v-if="user?.role !== 'agent'">
+    <Card v-if="user?.role !== 'agent'" class="bg-white/5 backdrop-blur-xl border-white/10">
       <CardHeader>
         <div class="flex items-center justify-between">
           <div class="space-y-1">
-            <CardDescription>Available Balance</CardDescription>
-            <CardTitle class="text-3xl font-bold">{{ formatBalance(balance) }} <span class="text-lg text-muted-foreground font-normal">MMK</span></CardTitle>
+            <CardDescription>{{ t('Available Balance', 'လက်ကျန်ငွေ') }}</CardDescription>
+            <CardTitle class="text-3xl font-bold">{{ formatBalance(balance) }} <span class="text-lg text-muted-foreground font-normal">{{ t('MMK', 'ကျပ်') }}</span></CardTitle>
           </div>
-          <div class="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div class="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center">
             <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
@@ -31,7 +31,7 @@
             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Add Funds
+            {{ t('Add Funds', 'ငွေဖြည့်မည်') }}
           </Button>
         </NuxtLink>
       </CardContent>
@@ -52,16 +52,16 @@
 
     <!-- Games Section -->
     <div class="space-y-3">
-      <h2 class="text-xl font-semibold">Games</h2>
+      <h2 class="text-xl font-semibold">{{ t('Games', 'ဂိမ်းများ') }}</h2>
       
       <div class="grid grid-cols-2 gap-4">
         <NuxtLink v-for="g in games" :key="g.path" :to="g.path">
-          <Card class="hover:bg-accent transition-colors cursor-pointer gap-0 p-0">
+          <Card class="hover:bg-white/10 transition-all cursor-pointer gap-0 p-0 bg-white/5 backdrop-blur-xl border-white/10">
             <CardContent class="flex flex-col items-center justify-center py-8 space-y-3">
-              <div class="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
+              <div :class="['h-16 w-16 rounded-lg flex items-center justify-center text-2xl font-bold', g.bgColor, g.color]">
                 {{ g.label }}
               </div>
-              <CardTitle class="text-base">{{ g.title }}</CardTitle>
+              <CardTitle class="text-base">{{ g.title[locale] }}</CardTitle>
             </CardContent>
           </Card>
         </NuxtLink>
@@ -83,6 +83,7 @@ definePageMeta({
 
 const { user, fetchUser } = useAuth()
 const { get } = useApi()
+const { locale, t } = useLanguage()
 
 const announcements = ref([])
 const slides = ref([])
@@ -92,22 +93,30 @@ const games = [
   { 
     path: '/2d',
     label: '2D',
-    title: '2D Lottery'
+    title: { en: '2D Lottery', mm: '2D ထီ' },
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500/20'
   },
   { 
     path: '/3d',
     label: '3D',
-    title: '3D Lottery'
+    title: { en: '3D Lottery', mm: '3D ထီ' },
+    color: 'text-pink-500',
+    bgColor: 'bg-pink-500/20'
   },
   { 
     path: '/bawdi',
     label: 'BD',
-    title: 'Bawdi'
+    title: { en: 'Bawdi', mm: 'ဘော်ဒီ' },
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500/20'
   },
   { 
     path: '/maung',
     label: 'MG',
-    title: 'Maung'
+    title: { en: 'Maung', mm: 'မောင်:' },
+    color: 'text-cyan-500',
+    bgColor: 'bg-cyan-500/20'
   }
 ]
 
