@@ -104,7 +104,7 @@ const games = [
     color: 'text-pink-500',
     bgColor: 'bg-pink-500/20'
   },
-  { 
+  /*{ 
     path: '/bawdi',
     label: 'BD',
     title: { en: 'Bawdi', mm: 'ဘော်ဒီ' },
@@ -117,7 +117,7 @@ const games = [
     title: { en: 'Maung', mm: 'မောင်:' },
     color: 'text-cyan-500',
     bgColor: 'bg-cyan-500/20'
-  }
+  }*/
 ]
 
 const balance = computed(() => {

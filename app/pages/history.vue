@@ -2,7 +2,7 @@
   <div class="container mx-auto p-4 pb-20">
     <!-- Tabs -->
     <div class="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 -mx-4 px-4 mb-4">
-      <div class="grid grid-cols-4 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         <Button
           v-for="tab in tabs"
           :key="tab.value"
@@ -230,8 +230,10 @@ const { locale, t } = useLanguage()
 const tabs = [
   { label: '2D', value: '2d' },
   { label: '3D', value: '3d' },
+  /*
   { label: t('Body', 'ဘော်ဒီ'), value: 'body' },
   { label: t('Maung', 'မောင်:'), value: 'maung' }
+   */
 ]
 
 const activeTab = ref('2d')
