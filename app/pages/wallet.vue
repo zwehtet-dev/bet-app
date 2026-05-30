@@ -51,7 +51,7 @@
     </Card>
 
     <!-- Wallet Balance Card (for all users including agents) -->
-    <Card>
+    <Card v-if="!isAgent">
       <CardContent class="pt-6">
         <div class="text-center space-y-2">
           <p class="text-sm text-muted-foreground">{{ isAgent ? t('Personal Wallet Balance', 'ကိုယ်ပိုင်ပိုက်ဆံအိတ်လက်ကျန်') : t('Total Balance', 'စုစုပေါင်းလက်ကျန်ငွေ') }}</p>
