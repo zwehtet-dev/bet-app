@@ -37,7 +37,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+        <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
           <div class="text-center">
             <p class="text-xs text-muted-foreground mb-1">2D Rate</p>
             <p class="text-sm font-semibold">{{ agentData?.commission_2d || 0 }}%</p>
@@ -45,10 +45,6 @@
           <div class="text-center">
             <p class="text-xs text-muted-foreground mb-1">3D Rate</p>
             <p class="text-sm font-semibold">{{ agentData?.commission_3d || 0 }}%</p>
-          </div>
-          <div class="text-center">
-            <p class="text-xs text-muted-foreground mb-1">Football Rate</p>
-            <p class="text-sm font-semibold">{{ agentData?.commission_football || 0 }}%</p>
           </div>
         </div>
       </CardContent>
