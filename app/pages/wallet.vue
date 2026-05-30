@@ -173,8 +173,8 @@
     </Card>
 
     <!-- Deposit Modal -->
-    <div v-if="showDepositModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="showDepositModal = false">
-      <Card class="w-full max-w-md">
+    <div v-if="showDepositModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50" @click.self="showDepositModal = false">
+      <Card class="w-full max-w-md shadow-2xl">
         <CardHeader>
           <div class="flex items-center justify-between">
             <CardTitle>Deposit Request</CardTitle>
@@ -238,8 +238,8 @@
     </div>
 
     <!-- Withdraw Modal -->
-    <div v-if="showWithdrawModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="showWithdrawModal = false">
-      <Card class="w-full max-w-md">
+    <div v-if="showWithdrawModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50" @click.self="showWithdrawModal = false">
+      <Card class="w-full max-w-md shadow-2xl">
         <CardHeader>
           <div class="flex items-center justify-between">
             <CardTitle>Withdrawal Request</CardTitle>
